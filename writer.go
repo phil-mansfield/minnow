@@ -55,8 +55,7 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 
 // Int64Group starts a new Int64 group where each block contains N int64's.
 func (wr *MinnowWriter) Int64Group(N int) {
-	writer := newInt64Group(wr.blocks, N)
-	wr.newGroup(writer)
+	wr.newGroup(newInt64Group(wr.blocks, N))
 }
 
 // newGroup starts a new group.
@@ -93,14 +92,16 @@ func (wr *MinnowWriter) Close() {
 
 	groupSizes := make([]int64, len(wr.writers))
 	groupTailSizes := make([]int64, len(wr.writers))
+	groupTypes := make([]int64, len(wr.writers))
 	for i := range groupSizes {
 		groupSizes[i] = wr.writers[i].dataBytes()
 		groupTailSizes[i] = wr.writers[i].tailBytes()
+		groupTypes[i] = int64(wr.writers[i].groupType())
 	}
 
 	tailData := [][]int64{
-		wr.headerOffsets, wr.headerSizes,
-		wr.blockOffsets, groupSizes, groupTailSizes,
+		wr.headerOffsets, wr.headerSizes, wr.blockOffsets,
+		groupSizes, groupTailSizes, groupTypes,
 	}
 
 	for _, data := range tailData{

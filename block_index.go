@@ -5,12 +5,12 @@ import (
 )
 
 type blockIndex struct {
-	startBlock int
+	startBlock int64
 	offsets []int64
 }
 
 func newBlockIndex(startBlock int) *blockIndex {
-	return &blockIndex{ startBlock, []int64{}, }
+	return &blockIndex{ int64(startBlock), []int64{}, }
 }
 
 func (idx *blockIndex) addBlock(size int64) {
@@ -23,13 +23,14 @@ func (idx *blockIndex) addBlock(size int64) {
 }
 
 func (idx *blockIndex) blockOffset(b int) int64 {
-	if b < idx.startBlock || b >= idx.startBlock + len(idx.offsets) {
+	b64 := int64(b)
+	if b64 < idx.startBlock || b64 >= idx.startBlock + int64(len(idx.offsets)) {
 		panic(fmt.Sprintf("Group contains blocks in range [%d, %d), but block" +
 			" %d was requested.", idx.startBlock,
-			idx.startBlock + len(idx.offsets), b))
+			idx.startBlock + int64(len(idx.offsets)), b64))
 	}
 
-	return idx.offsets[b - idx.startBlock]
+	return idx.offsets[b64 - idx.startBlock]
 }
 
 func (idx *blockIndex) blocks() int64 {
