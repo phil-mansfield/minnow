@@ -21,7 +21,7 @@ func createInt64Record(fname string, xs [][]int64, text string) {
 
 	// Create the file
 
-	f := Create(fname, testFileType)
+	f := Create(fname)
 	defer f.Close()
 
 	f.Header(hd)
@@ -38,9 +38,6 @@ func readInt64Record(fname string) (xs [][]int64, text string) {
 	// Open and confirm type.
 
 	f := Open(fname)
-	if t := f.FileType(); t != testFileType {
-		panic(fmt.Sprintf("file type = %d", t))
-	}
 
 	// Header stuff.
 

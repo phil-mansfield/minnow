@@ -12,10 +12,6 @@ func Open(fname string) *MinnowReader {
 	panic("NYI")
 }
 
-func (rd *MinnowReader) FileType() FileType {
-	panic("NYI")
-}
-
 func (rd *MinnowReader) Header(i int, out interface{}) {
 	panic("NYI")
 }

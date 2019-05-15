@@ -6,10 +6,3 @@ package minnow
 
 const Version = 1
 const Magic = 0xacedad
-
-type FileType uint64
-const (
-	testFileType FileType = iota
-	MinhFileType
-	MinpFileType
-)

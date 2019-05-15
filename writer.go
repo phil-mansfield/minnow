@@ -10,7 +10,6 @@ import (
 type MinnowWriter struct {
 	f *os.File
 
-	fileType FileType
 	headers, blocks int
 
     writers []group
@@ -22,15 +21,16 @@ type MinnowWriter struct {
 // minnowHeader is the data block written before any user data is added to the
 // files.
 type minnowHeader struct {
-	magic, version, fileType uint64
+	magic, version uint64
 	headers, blocks, tailStart uint64
 }
 
-func Create(fname string, t FileType) *MinnowWriter {
+// Create creates a new minnow file and returns a corresponding MinnowWriter.
+func Create(fname string) *MinnowWriter {
 	f, err := os.Create(fname)
 	if err != nil { panic(err.Error()) }
 
-	wr := &MinnowWriter{ f: f, fileType: t }
+	wr := &MinnowWriter{ f: f }
 
 	// For now we don't need anything in the header: that will be handled in the
 	// Close() method.
@@ -118,7 +118,7 @@ func (wr *MinnowWriter) Close() {
 	if err != nil { panic(err.Error()) }
 	
 	hd := minnowHeader{
-		Magic, Version, uint64(wr.fileType),
+		Magic, Version,
 		uint64(wr.headers), uint64(wr.blocks), uint64(tailStart),
 	}
 	binary.Write(wr.f, binary.LittleEndian, hd)
