@@ -3,7 +3,6 @@ package minnow
 import (
 	"encoding/binary"
 	"os"
-	"reflect"
 )
 
 // MinnowWriter represents a new file which minnow blocks can be written into.
@@ -40,6 +39,7 @@ func Create(fname string) *MinnowWriter {
 	return wr
 }
 
+// Header writes a header block 
 func (wr *MinnowWriter) Header(x interface{}) int {
 	err := binary.Write(wr.f, binary.LittleEndian, x)
 	if err != nil { panic(err.Error()) }
@@ -47,9 +47,7 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 	pos, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
 	wr.headerOffsets = append(wr.headerOffsets, pos)
-	
-	size := int64(reflect.TypeOf(x).Size())
-	wr.headerSizes = append(wr.headerSizes, size)
+	wr.headerSizes = append(wr.headerSizes, int64(binary.Size(x)))
 
 	wr.headers++
 	return wr.headers - 1
