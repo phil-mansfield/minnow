@@ -1,8 +1,7 @@
 package minnow
 
 import (
-	"fmt"
-
+	//"fmt"
 	"testing"
 )
 
@@ -27,7 +26,7 @@ func createInt64Record(fname string, xs [][]int64, text string) {
 	f.Header(hd)
 	f.Header(bText)
 	for i := range xs {
-		f.Int64Group()
+		f.Int64Group(len(xs[i]))
 		f.Data(xs[i])
 	}
 	f.Header(lengths)
