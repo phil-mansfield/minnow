@@ -17,7 +17,11 @@ type group interface {
 	readHeader(f *os.File)
 }
 
-
 func newInt64Group(startBlock int, N int) group {
 	panic("NYI")
+}
+
+
+type int64Group struct {
+	blockIndex
 }
