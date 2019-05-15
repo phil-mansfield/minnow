@@ -39,7 +39,7 @@ func Create(fname string) *MinnowWriter {
 	return wr
 }
 
-// Header writes a header block 
+// Header writes a header block to the file and returns its header index.
 func (wr *MinnowWriter) Header(x interface{}) int {
 	err := binary.Write(wr.f, binary.LittleEndian, x)
 	if err != nil { panic(err.Error()) }
@@ -53,11 +53,13 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 	return wr.headers - 1
 }
 
+// Int64Group starts a new Int64 group where each block contains N int64's.
 func (wr *MinnowWriter) Int64Group(N int) {
 	writer := newInt64Group(wr.blocks, N)
 	wr.newGroup(writer)
 }
 
+// newGroup starts a new group.
 func (wr *MinnowWriter) newGroup(g group) {
 	wr.writers = append(wr.writers, g)
 	wr.groupBlocks = append(wr.groupBlocks, 0)
@@ -67,6 +69,7 @@ func (wr *MinnowWriter) newGroup(g group) {
 	wr.blockOffsets = append(wr.blockOffsets, pos)
 }
 
+// Data writes a data block to the file within the most recent Group.
 func (wr *MinnowWriter) Data(x interface{}) int {
 	writer := wr.writers[len(wr.writers) - 1]
 	writer.writeData(wr.f, x)
@@ -76,6 +79,8 @@ func (wr *MinnowWriter) Data(x interface{}) int {
 	return wr.blocks - 1
 }
 
+// Close writes internal bookkeeping information to the end of the file
+// and closes it.
 func (wr *MinnowWriter) Close() {
 	// Finalize running data.
 	
