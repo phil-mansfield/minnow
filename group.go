@@ -67,7 +67,7 @@ func newFixedSizeGroup(startBlock, N, bytes int, gt int64) *fixedSizeGroup {
 func newFixedSizeGroupFromTail(f *os.File, gt int64) *fixedSizeGroup {
 	startBlock := int64(0)
 	blocks := int64(0)
-	g := &fixedSizeGroup{ }
+	g := &fixedSizeGroup{ typeSize: int64(fixedSizeBytes[gt]) }
 
 	binaryRead(f, &g.N)
 	binaryRead(f, &startBlock)

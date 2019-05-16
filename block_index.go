@@ -30,7 +30,8 @@ func (idx *blockIndex) blockOffset(b int) int64 {
 			idx.startBlock + int64(len(idx.offsets)), b64))
 	}
 
-	return idx.offsets[b64 - idx.startBlock]
+	if b64 == idx.startBlock { return 0 }
+	return idx.offsets[b64 - idx.startBlock - 1]
 }
 
 func (idx *blockIndex) blocks() int64 {
