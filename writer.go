@@ -6,7 +6,7 @@ import (
 )
 
 // MinnowWriter represents a new file which minnow blocks can be written into.
-type MinnowWriter struct {
+type Writer struct {
 	f *os.File
 
 	headers, blocks int
@@ -25,19 +25,19 @@ type minnowHeader struct {
 	TailStart int64
 }
 
-// Create creates a new minnow file and returns a corresponding MinnowWriter.
-func Create(fname string) *MinnowWriter {
+// Create creates a new minnow file and returns a corresponding Writer.
+func Create(fname string) *Writer {
 	f, err := os.Create(fname)
 	if err != nil { panic(err.Error()) }
 
-	wr := &MinnowWriter{ f: f }
+	wr := &Writer{ f: f }
 	binaryWrite(wr.f, &minnowHeader{})
 
 	return wr
 }
 
 // Header writes a header block to the file and returns its header index.
-func (wr *MinnowWriter) Header(x interface{}) int {
+func (wr *Writer) Header(x interface{}) int {
 	pos, _ := wr.f.Seek(0, 1)
 
 	pos, err := wr.f.Seek(0, 1)
@@ -53,12 +53,12 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 
 // FixedSizeGroup starts a "fixed size" group, meaning that each block only
 // contains in16s, uint64, float32s, etc. They are not compressed.
-func (wr *MinnowWriter) FixedSizeGroup(groupType int64, N int) {
+func (wr *Writer) FixedSizeGroup(groupType int64, N int) {
 	wr.newGroup(newFixedSizeGroup(wr.blocks, N, groupType))
 }
 
 // newGroup starts a new group.
-func (wr *MinnowWriter) newGroup(g group) {
+func (wr *Writer) newGroup(g group) {
 	wr.writers = append(wr.writers, g)
 	wr.groupBlocks = append(wr.groupBlocks, 0)
 
@@ -68,7 +68,7 @@ func (wr *MinnowWriter) newGroup(g group) {
 }
 
 // Data writes a data block to the file within the most recent Group.
-func (wr *MinnowWriter) Data(x interface{}) int {
+func (wr *Writer) Data(x interface{}) int {
 	writer := wr.writers[len(wr.writers) - 1]
 	writer.writeData(wr.f, x)
 
@@ -79,7 +79,7 @@ func (wr *MinnowWriter) Data(x interface{}) int {
 
 // Close writes internal bookkeeping information to the end of the file
 // and closes it.
-func (wr *MinnowWriter) Close() {
+func (wr *Writer) Close() {
 	// Finalize running data.
 	
 	defer wr.f.Close()
