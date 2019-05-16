@@ -17,6 +17,10 @@ const (
 	Float32Group
 )
 
+var fixedSizeBytes = []int{
+	8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 
+}
+
 type group interface {
 	groupType() int64
 
@@ -104,39 +108,4 @@ func (g *fixedSizeGroup) writeTail(f *os.File) {
 	binaryWrite(f, g.N)
 	binaryWrite(f, g.startBlock)
 	binaryWrite(f, g.blocks())
-}
-
-/////////////////////////////////
-// intances of fixedSizeGroups //
-/////////////////////////////////
-
-func newInt64Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 8, Int64Group)
-}
-func newInt32Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 4, Int32Group)
-}
-func newInt16Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 2, Int16Group)
-}
-func newInt8Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 1, Int8Group)
-}
-func newUint64Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 8, Uint64Group)
-}
-func newUint32Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 4, Uint32Group)
-}
-func newUint16Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 2, Uint16Group)
-}
-func newUint8Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 1, Uint8Group)
-}
-func newFloat64Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 8, Float64Group)
-}
-func newFloat32Group(startBlock, N int) group {
-	return newFixedSizeGroup(startBlock, N, 4, Float32Group)
 }

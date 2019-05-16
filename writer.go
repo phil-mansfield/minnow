@@ -51,9 +51,12 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 	return wr.headers - 1
 }
 
-// Int64Group starts a new Int64 group where each block contains N int64's.
-func (wr *MinnowWriter) Int64Group(N int) {
-	wr.newGroup(newInt64Group(wr.blocks, N))
+// FixedSizeGroup starts a "fixed size" group, meaning that each block only
+// contains in16s, uint64, float32s, etc. They are not compressed.
+func (wr *MinnowWriter) FixedSizeGroup(groupType int64, N int) {
+	wr.newGroup(newFixedSizeGroup(
+		wr.blocks, N, fixedSizeBytes[groupType], groupType,
+	))
 }
 
 // newGroup starts a new group.
