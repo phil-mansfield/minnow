@@ -14,14 +14,15 @@ type MinnowWriter struct {
     writers []group
     headerOffsets, headerSizes []int64
 	groupBlocks []int64
-    blockOffsets []int64
+    groupOffsets []int64
 }
 
 // minnowHeader is the data block written before any user data is added to the
 // files.
 type minnowHeader struct {
 	magic, version uint64
-	headers, blocks, tailStart uint64
+	groups, headers, blocks uint64
+	tailStart int64
 }
 
 // Create creates a new minnow file and returns a corresponding MinnowWriter.
@@ -30,19 +31,14 @@ func Create(fname string) *MinnowWriter {
 	if err != nil { panic(err.Error()) }
 
 	wr := &MinnowWriter{ f: f }
-
-	// For now we don't need anything in the header: that will be handled in the
-	// Close() method.
-	err = binary.Write(wr.f, binary.LittleEndian, minnowHeader{})
-	if err != nil { panic(err.Error()) }
+	binaryWrite(wr.f, minnowHeader{})
 
 	return wr
 }
 
 // Header writes a header block to the file and returns its header index.
 func (wr *MinnowWriter) Header(x interface{}) int {
-	err := binary.Write(wr.f, binary.LittleEndian, x)
-	if err != nil { panic(err.Error()) }
+	binaryWrite(wr.f, x)
 
 	pos, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
@@ -65,7 +61,7 @@ func (wr *MinnowWriter) newGroup(g group) {
 
 	pos, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
-	wr.blockOffsets = append(wr.blockOffsets, pos)
+	wr.groupOffsets = append(wr.groupOffsets, pos)
 }
 
 // Data writes a data block to the file within the most recent Group.
@@ -100,18 +96,13 @@ func (wr *MinnowWriter) Close() {
 	}
 
 	tailData := [][]int64{
-		wr.headerOffsets, wr.headerSizes, wr.blockOffsets,
-		groupSizes, groupTailSizes, groupTypes,
+		wr.headerOffsets, wr.headerSizes, wr.groupOffsets,
+		groupSizes, groupTailSizes, groupTypes, wr.groupBlocks,
 	}
-
-	for _, data := range tailData{
-		err = binary.Write(wr.f, binary.LittleEndian, data)
-		if err != nil { panic(err.Error())}
-
+	
+	for _, data := range tailData {
+		binaryWrite(wr.f, data)
 	}
-
-	// Write group tail.
-
 	for _, g := range wr.writers {
 		g.writeTail(wr.f)
 	}
@@ -122,8 +113,13 @@ func (wr *MinnowWriter) Close() {
 	if err != nil { panic(err.Error()) }
 	
 	hd := minnowHeader{
-		Magic, Version,
-		uint64(wr.headers), uint64(wr.blocks), uint64(tailStart),
+		Magic, Version, uint64(len(wr.writers)),
+		uint64(wr.headers), uint64(wr.blocks), tailStart,
 	}
-	binary.Write(wr.f, binary.LittleEndian, hd)
+	binaryWrite(wr.f, hd)
+}
+
+func binaryWrite(f *os.File, data interface{}) {
+    err := binary.Read(f, binary.LittleEndian, data)
+    if err != nil { panic(err.Error()) }
 }

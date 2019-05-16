@@ -1,13 +1,11 @@
 package minnow
 
 import (
-	"encoding/binary"
 	"os"
 )
 
-type GroupType int64
 const (
-	Int64Group GroupType = iota
+	Int64Group int64 = iota
 	Int32Group
 	Int16Group
 	Int8Group
@@ -20,7 +18,7 @@ const (
 )
 
 type group interface {
-	groupType() GroupType
+	groupType() int64
 
 	dataBytes() int64
 	tailBytes() int64
@@ -37,6 +35,14 @@ var (
 	_ group = &fixedSizeGroup{ }
 )
 
+func groupFromTail(f *os.File, gt int64) group {
+	switch {
+	case gt >= Int64Group && gt <= Float64Group:
+		return newFixedSizeGroupFromTail(f, gt)
+	}
+	panic("Unrecognized group type.")
+}
+
 ////////////////////
 // fixedSizeGroup //
 ////////////////////
@@ -45,26 +51,23 @@ type fixedSizeGroup struct {
 	blockIndex
 	N int64
 	typeSize int64
-	gt GroupType
+	gt int64
 }
 
-func newFixedSizeGroup(startBlock, N, bytes int, gt GroupType) *fixedSizeGroup {
+func newFixedSizeGroup(startBlock, N, bytes int, gt int64) *fixedSizeGroup {
 	return &fixedSizeGroup{
 		*newBlockIndex(startBlock), int64(N), int64(bytes), gt,
 	}
 }
 
-func newFixedSizeGroupFromTail(f *os.File, gt GroupType) *fixedSizeGroup {
+func newFixedSizeGroupFromTail(f *os.File, gt int64) *fixedSizeGroup {
 	startBlock := int64(0)
 	blocks := int64(0)
 	g := &fixedSizeGroup{ }
 
-	err := binary.Read(f, binary.LittleEndian, &g.N)
-	if err != nil { panic(err.Error()) }
-	err = binary.Read(f, binary.LittleEndian, &startBlock)
-	if err != nil { panic(err.Error()) }
-	err = binary.Read(f, binary.LittleEndian, &blocks)
-	if err != nil { panic(err.Error()) }
+	binaryRead(f, &g.N)
+	binaryRead(f, &startBlock)
+	binaryRead(f, &blocks)
 
 	g.blockIndex = *newBlockIndex(int(startBlock))
 	for i := int64(0); i < blocks; i++ {
@@ -75,7 +78,7 @@ func newFixedSizeGroupFromTail(f *os.File, gt GroupType) *fixedSizeGroup {
 	return g
 }
 
-func (g *fixedSizeGroup) groupType() GroupType {
+func (g *fixedSizeGroup) groupType() int64 {
 	return g.gt
 }
 
@@ -88,23 +91,18 @@ func (g *fixedSizeGroup) tailBytes() int64 {
 }
 
 func (g *fixedSizeGroup) writeData(f *os.File, x interface{}) {
-	err := binary.Write(f, binary.LittleEndian, x)
-	if err != nil { panic(err.Error()) }
+	binaryWrite(f, x)
 }
 
 func (g *fixedSizeGroup) readData(f *os.File, out interface{}) {
-	err := binary.Read(f, binary.LittleEndian, out)
-	if err != nil { panic(err.Error()) }
+	binaryRead(f, out)
 }
 
 
 func (g *fixedSizeGroup) writeTail(f *os.File) {
-	err := binary.Write(f, binary.LittleEndian, g.N)
-	if err != nil { panic(err.Error()) }
-	err = binary.Write(f, binary.LittleEndian, g.startBlock)
-	if err != nil { panic(err.Error()) }
-	err = binary.Write(f, binary.LittleEndian, g.blocks())
-	if err != nil { panic(err.Error()) }
+	binaryWrite(f, g.N)
+	binaryWrite(f, g.startBlock)
+	binaryWrite(f, g.blocks())
 }
 
 /////////////////////////////////
