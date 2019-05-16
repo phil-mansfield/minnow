@@ -55,9 +55,10 @@ type fixedSizeGroup struct {
 	gt int64
 }
 
-func newFixedSizeGroup(startBlock, N, bytes int, gt int64) *fixedSizeGroup {
+func newFixedSizeGroup(startBlock, N int, gt int64) *fixedSizeGroup {
 	return &fixedSizeGroup{
-		*newBlockIndex(startBlock), int64(N), int64(bytes), gt,
+		*newBlockIndex(startBlock), int64(N),
+		int64(fixedSizeBytes[gt]), gt,
 	}
 }
 

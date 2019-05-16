@@ -54,9 +54,7 @@ func (wr *MinnowWriter) Header(x interface{}) int {
 // FixedSizeGroup starts a "fixed size" group, meaning that each block only
 // contains in16s, uint64, float32s, etc. They are not compressed.
 func (wr *MinnowWriter) FixedSizeGroup(groupType int64, N int) {
-	wr.newGroup(newFixedSizeGroup(
-		wr.blocks, N, fixedSizeBytes[groupType], groupType,
-	))
+	wr.newGroup(newFixedSizeGroup(wr.blocks, N, groupType))
 }
 
 // newGroup starts a new group.
