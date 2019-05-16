@@ -57,14 +57,12 @@ func Open(fname string) *MinnowReader {
 	rd.headerOffsets = make([]int64, rd.headers)
 	rd.headerSizes = make([]int64, rd.headers)
 	rd.groupOffsets = make([]int64, rd.groups)
-	rd.groupSizes = make([]int64, rd.groups)
-	rd.groupHeaderSizes = make([]int64, rd.groups)
 	rd.groupTypes = make([]int64, rd.groups)
 	groupBlocks := make([]int64, rd.groups)
 
 	tailData := [][]int64{
 		rd.headerOffsets, rd.headerSizes, rd.groupOffsets,
-		rd.groupSizes, rd.groupHeaderSizes, rd.groupTypes, groupBlocks,
+		rd.groupTypes, groupBlocks,
 	}
 
 	// Read group data

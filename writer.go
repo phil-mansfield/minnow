@@ -91,18 +91,14 @@ func (wr *MinnowWriter) Close() {
 
 	// Write default tail.
 
-	groupSizes := make([]int64, len(wr.writers))
-	groupTailSizes := make([]int64, len(wr.writers))
 	groupTypes := make([]int64, len(wr.writers))
-	for i := range groupSizes {
-		groupSizes[i] = wr.writers[i].dataBytes()
-		groupTailSizes[i] = wr.writers[i].tailBytes()
+	for i := range groupTypes {
 		groupTypes[i] = int64(wr.writers[i].groupType())
 	}
 
 	tailData := [][]int64{
 		wr.headerOffsets, wr.headerSizes, wr.groupOffsets,
-		groupSizes, groupTailSizes, groupTypes, wr.groupBlocks,
+		groupTypes, wr.groupBlocks,
 	}
 	
 	for _, data := range tailData {
