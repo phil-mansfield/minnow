@@ -35,23 +35,23 @@ func Open(fname string) *MinnowReader {
 
 	// Check that this is a file we can actually read.
 
-	if minHd.magic != Magic {
+	if minHd.Magic != Magic {
 		panic(fmt.Sprintf("%s is not a minnow file. Magic number is %x, " + 
-			"not %x.", fname, minHd.magic, Magic))
-	} else if minHd.version != Version {
+			"not %x.", fname, minHd.Magic, Magic))
+	} else if minHd.Version != Version {
 		panic(fmt.Sprintf("%s was written with minnow verison %d, but this " +
 			"code has version %d. See the github page for instrucitons on " + 
-			"retrieving a specific version.", fname, minHd.version, Version))
+			"retrieving a specific version.", fname, minHd.Version, Version))
 	}
 
 	rd := &MinnowReader{
-		f: f, groups: int(minHd.groups),
-		headers: int(minHd.headers), blocks: int(minHd.blocks),
+		f: f, groups: int(minHd.Groups),
+		headers: int(minHd.Headers), blocks: int(minHd.Blocks),
 	}
 
 	// Read tail data
 
-	_, err = f.Seek(minHd.tailStart, 0)
+	_, err = f.Seek(minHd.TailStart, 0)
 	if err != nil { panic(err.Error()) }	
 
 	rd.headerOffsets = make([]int64, rd.headers)

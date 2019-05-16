@@ -1,13 +1,12 @@
 package minnow
 
 import (
-	//"fmt"
 	"testing"
 )
 
 type int64RecordHead struct {
-	magic uint64
-	blocks uint64
+	Magic uint64
+	Blocks uint64
 }
 
 func createInt64Record(fname string, xs [][]int64, text string) {
@@ -44,12 +43,12 @@ func readInt64Record(fname string) (xs [][]int64, text string) {
 	f.Header(0, hd)
 	bText := make([]byte, f.HeaderSize(1))
 	f.Header(1, bText)
-	lengths := make([]uint64, hd.blocks)
+	lengths := make([]uint64, hd.Blocks)
 	f.Header(2, lengths)
 
 	// Read data
 
-	xs = make([][]int64, hd.blocks)
+	xs = make([][]int64, hd.Blocks)
 	for i := range xs {
 		xs[i] = make([]int64, lengths[i]) 
 		f.Data(i, xs[i])

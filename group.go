@@ -92,6 +92,7 @@ func (g *fixedSizeGroup) tailBytes() int64 {
 
 func (g *fixedSizeGroup) writeData(f *os.File, x interface{}) {
 	binaryWrite(f, x)
+	g.addBlock(g.typeSize*g.N)
 }
 
 func (g *fixedSizeGroup) readData(f *os.File, out interface{}) {

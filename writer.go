@@ -20,9 +20,9 @@ type MinnowWriter struct {
 // minnowHeader is the data block written before any user data is added to the
 // files.
 type minnowHeader struct {
-	magic, version uint64
-	groups, headers, blocks uint64
-	tailStart int64
+	Magic, Version uint64
+	Groups, Headers, Blocks uint64
+	TailStart int64
 }
 
 // Create creates a new minnow file and returns a corresponding MinnowWriter.
@@ -31,19 +31,21 @@ func Create(fname string) *MinnowWriter {
 	if err != nil { panic(err.Error()) }
 
 	wr := &MinnowWriter{ f: f }
-	binaryWrite(wr.f, minnowHeader{})
+	binaryWrite(wr.f, &minnowHeader{})
 
 	return wr
 }
 
 // Header writes a header block to the file and returns its header index.
 func (wr *MinnowWriter) Header(x interface{}) int {
-	binaryWrite(wr.f, x)
+	pos, _ := wr.f.Seek(0, 1)
 
 	pos, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
 	wr.headerOffsets = append(wr.headerOffsets, pos)
 	wr.headerSizes = append(wr.headerSizes, int64(binary.Size(x)))
+
+	binaryWrite(wr.f, x)
 
 	wr.headers++
 	return wr.headers - 1
@@ -120,6 +122,6 @@ func (wr *MinnowWriter) Close() {
 }
 
 func binaryWrite(f *os.File, data interface{}) {
-    err := binary.Read(f, binary.LittleEndian, data)
+    err := binary.Write(f, binary.LittleEndian, data)
     if err != nil { panic(err.Error()) }
 }
