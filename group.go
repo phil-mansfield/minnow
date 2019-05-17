@@ -106,6 +106,9 @@ func (g *fixedSizeGroup) writeTail(f *os.File) {
 // IntGroup //
 ///////////////
 
+// intGroup is a group which dynamically determines the range of the input
+// integers and stores using the minimum possible precision. This group is used
+// as a component of several other, more comlicated groups.
 type intGroup struct {
 	blockIndex
 	N int64

@@ -55,6 +55,12 @@ func (wr *Writer) FixedSizeGroup(groupType int64, N int) {
 	wr.newGroup(newFixedSizeGroup(wr.blocks, N, groupType))
 }
 
+// IntGroup starts an integer group which stores int64s to the minimum
+// neccessary precision.
+func (wr *Writer) IntGroup(groupType int64, N int) {
+	wr.newGroup(newIntGroup(wr.blocks, N))
+}
+
 // newGroup starts a new group.
 func (wr *Writer) newGroup(g group) {
 	wr.writers = append(wr.writers, g)
