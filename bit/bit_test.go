@@ -42,7 +42,8 @@ func TestArrayBuffer(t *testing.T) {
 	for i := range lengths {
 		data := ab.Uint64(lengths[i])
 		for j := range data { data[j] = uint64(j) }
-		bits[i] = ab.Write(f, data)
+		bits[i] = ab.Bits(data)
+		ab.Write(f, data, bits[i])
 	}
 
 	f.Close()

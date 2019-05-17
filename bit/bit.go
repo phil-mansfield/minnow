@@ -148,22 +148,21 @@ type ArrayBuffer struct {
 	uint64Buf []uint64
 }
 
-func (ab *ArrayBuffer) Write(f *os.File, x []uint64) (bits int) {
+func (ab *ArrayBuffer) Bits(x []uint64) int {
 	max := x[0]
 	for i := range x {
 		if x[i] > max { max = x[i] }
 	}
 
-	// Don't write anything for 0 bits.
-	if max == 0 { return 0 }
+	return PrecisionNeeded(uint64(max))
+}
 
-	bits = PrecisionNeeded(uint64(max))
+func (ab *ArrayBuffer) Write(f *os.File, x []uint64, bits int) {
+	if bits == 0 { return }
+
 	ab.setByteSize(ArrayBytes(bits, len(x)))
 	arr := BufferedArray(bits, x, ab.byteBuf)
-
 	f.Write(arr.Data)
-
-	return bits
 }
 
 func (ab *ArrayBuffer) Read(f *os.File, bits, n int) []uint64 {
