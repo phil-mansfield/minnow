@@ -117,7 +117,7 @@ func (rd *Reader) Data(b int, out interface{}) {
 	_, err = rd.f.Seek(rd.readers[i].blockOffset(b), 1)
 	if err != nil { panic(err.Error()) }
 
-	rd.readers[i].readData(rd.f, out)
+	rd.readers[i].readData(rd.f, b, out)
 }
 
 // DataType returns an integer representing the 

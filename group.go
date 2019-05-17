@@ -2,6 +2,7 @@ package minnow
 
 import (
 	"os"
+	"github.com/phil-mansfield/minnow/bit"
 )
 
 const (
@@ -15,6 +16,7 @@ const (
 	Uint8Group
 	Float64Group
 	Float32Group
+	IntGroup
 )
 
 var fixedSizeBytes = []int{
@@ -29,7 +31,7 @@ type group interface {
 
 	blockOffset(b int) int64
 
-	readData(f *os.File, x interface{})
+	readData(f *os.File, b int, x interface{})
 }
 
 var (
@@ -89,7 +91,7 @@ func (g *fixedSizeGroup) writeData(f *os.File, x interface{}) {
 	g.addBlock(g.typeSize*g.N)
 }
 
-func (g *fixedSizeGroup) readData(f *os.File, out interface{}) {
+func (g *fixedSizeGroup) readData(f *os.File, b int, out interface{}) {
 	binaryRead(f, out)
 }
 
@@ -98,4 +100,112 @@ func (g *fixedSizeGroup) writeTail(f *os.File) {
 	binaryWrite(f, g.N)
 	binaryWrite(f, g.startBlock)
 	binaryWrite(f, g.blocks())
+}
+
+///////////////
+// IntGroup //
+///////////////
+
+type intGroup struct {
+	blockIndex
+	N int64
+	ab *bit.ArrayBuffer
+	mins, bits []int64
+}
+
+func newIntGroup(startBlock, N int) group {
+	return &intGroup{
+		blockIndex: *newBlockIndex(startBlock), N: int64(N),
+		ab: &bit.ArrayBuffer{ },
+	}
+}
+
+func newIntGroupFromTail(f *os.File) group {
+	g := &intGroup{ }
+	var startBlock, blocks, min, bits int64
+
+	read := func() (x []int64) {
+		binaryRead(f, &min)
+		binaryRead(f, &bits)
+		buf := g.ab.Read(f, int(bits), int(g.N))
+		out := make([]int64, g.N)
+		for i := range out { out[i] = min + int64(buf[i] )}
+		return out
+	}
+
+	binaryRead(f, &g.N)
+	binaryRead(f, &startBlock)
+	binaryRead(f, &blocks)
+	g.mins = read()
+	g.bits = read()
+
+	g.blockIndex = *newBlockIndex(int(startBlock))
+	for i := range g.bits {
+		g.addBlock(int64(bit.ArrayBytes(int(g.bits[i]), int(g.N))))
+	}
+
+	return g
+}
+
+func (g *intGroup) writeTail(f *os.File) {
+	write := func(x []int64) {
+		buf := g.ab.Uint64(len(x))
+		min := int64Min(x)
+		for i := range x { buf[i] = uint64(x[i] - min) }
+		bits := g.ab.Bits(buf)
+
+		binaryWrite(f, min)
+		binaryWrite(f, bits)
+		g.ab.Write(f, buf, bits)
+
+	}
+
+	binaryWrite(f, int64(g.N))
+	binaryWrite(f, g.startBlock)
+	binaryWrite(f, g.blocks())
+	write(g.mins)
+	write(g.bits)
+}
+
+func (g *intGroup) groupType() int64 {
+	return IntGroup
+}
+
+func (g *intGroup) writeData(f *os.File, x interface{}) {
+	data := x.([]int64)
+	min := int64Min(data)
+	
+	buf := g.ab.Uint64(len(data))
+	for i := range buf { buf[i] = uint64(data[i] - min) }
+	bits := g.ab.Bits(buf)
+	g.ab.Write(f, buf, bits)
+	
+	g.mins = append(g.mins, min)
+	g.bits = append(g.bits, int64(bits))
+
+	g.addBlock(int64(bit.ArrayBytes(bits, int(g.N))))
+}
+
+func (g *intGroup) readData(f *os.File, b int, x interface{}) {	
+	out := x.([]int64)
+	bIdx := b - int(g.startBlock)
+	bits, min := g.bits[bIdx], g.mins[bIdx]
+	buf := g.ab.Read(f, int(bits), int(g.N))
+	for i := range buf { out[i] = min + int64(buf[i]) }
+}
+
+func int64Min(x []int64) int64 {
+	min := x[0]
+	for i := range x {
+		if x[i] < min { min = x[i] }
+	}
+	return min
+}
+
+func uint64Min(x []uint64) uint64 {
+	min := x[0]
+	for i := range x {
+		if x[i] < min { min = x[i] }
+	}
+	return min
 }
