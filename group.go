@@ -25,6 +25,7 @@ var fixedSizeBytes = []int{
 
 type group interface {
 	groupType() int64
+	length(b int) int
 
 	writeData(f *os.File, x interface{})
 	writeTail(f *os.File)
@@ -84,6 +85,10 @@ func newFixedSizeGroupFromTail(f *os.File, gt int64) *fixedSizeGroup {
 
 func (g *fixedSizeGroup) groupType() int64 {
 	return g.gt
+}
+
+func (g *fixedSizeGroup) length(b int) int {
+	return int(g.N)
 }
 
 func (g *fixedSizeGroup) writeData(f *os.File, x interface{}) {
@@ -172,6 +177,10 @@ func (g *intGroup) writeTail(f *os.File) {
 
 func (g *intGroup) groupType() int64 {
 	return IntGroup
+}
+
+func (g *intGroup) length(b int) int {
+	return int(g.N)
 }
 
 func (g *intGroup) writeData(f *os.File, x interface{}) {

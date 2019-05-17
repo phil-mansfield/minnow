@@ -120,11 +120,15 @@ func (rd *Reader) Data(b int, out interface{}) {
 	rd.readers[i].readData(rd.f, b, out)
 }
 
-// DataType returns an integer representing the 
+// DataType returns an integer representing the group type of block be.
 func (rd *Reader) DataType(b int) int64 {
 	return rd.groupTypes[rd.blockIndex[b]]
 }
 
+// DataLen returns the number of element in block b.
+func (rd *Reader) DataLen(b int) int {
+	return rd.readers[rd.blockIndex[b]].length(b)
+}
 
 // Close closes the file.
 func (rd *Reader) Close() {
