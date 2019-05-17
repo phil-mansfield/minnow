@@ -7,11 +7,11 @@ import (
 )
 
 //////////////////
-// MinnowReader //
+// Reader //
 //////////////////
 
-// MinnowReader represents an open minnow file.
-type MinnowReader struct {
+// Reader represents an open minnow file.
+type Reader struct {
 	f *os.File
 
 	groups, headers, blocks int
@@ -25,7 +25,7 @@ type MinnowReader struct {
 }
 
 // Open opens a minnow file.
-func Open(fname string) *MinnowReader {
+func Open(fname string) *Reader {
 	f, err := os.Open(fname)
 
 	// Read header
@@ -44,7 +44,7 @@ func Open(fname string) *MinnowReader {
 			"retrieving a specific version.", fname, minHd.Version, Version))
 	}
 
-	rd := &MinnowReader{
+	rd := &Reader{
 		f: f, groups: int(minHd.Groups),
 		headers: int(minHd.Headers), blocks: int(minHd.Blocks),
 	}
@@ -88,7 +88,7 @@ func Open(fname string) *MinnowReader {
 
 
 // Header reads the ith header in the minnow file.
-func (rd *MinnowReader) Header(i int, out interface{}) {
+func (rd *Reader) Header(i int, out interface{}) {
 	if binary.Size(out) != int(rd.headerSizes[i]) {
 		panic(fmt.Sprintf("Header buffer has size %d, but written header " + 
 			"has size %d.", binary.Size(out), rd.headerSizes[i]))
@@ -100,17 +100,17 @@ func (rd *MinnowReader) Header(i int, out interface{}) {
 }
 
 // HeaderSize returns the number of bytes in ith header in the file.
-func (rd *MinnowReader) HeaderSize(i int) int {
+func (rd *Reader) HeaderSize(i int) int {
 	return int(rd.headerSizes[i])
 }
 
 // Blocks returns the number of data blocks in the file.
-func (rd *MinnowReader) Blocks() int {
+func (rd *Reader) Blocks() int {
 	return rd.blocks
 }
 
 // Data reads the bth data block in the file.
-func (rd *MinnowReader) Data(b int, out interface{}) {
+func (rd *Reader) Data(b int, out interface{}) {
 	i := rd.blockIndex[b]
 	_, err := rd.f.Seek(rd.groupOffsets[i], 0)
 	if err != nil { panic(err.Error()) }
@@ -121,13 +121,13 @@ func (rd *MinnowReader) Data(b int, out interface{}) {
 }
 
 // DataType returns an integer representing the 
-func (rd *MinnowReader) DataType(b int) int64 {
+func (rd *Reader) DataType(b int) int64 {
 	return rd.groupTypes[rd.blockIndex[b]]
 }
 
 
 // Close closes the file.
-func (rd *MinnowReader) Close() {
+func (rd *Reader) Close() {
 	rd.f.Close()
 }
 

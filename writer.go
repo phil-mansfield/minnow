@@ -38,8 +38,6 @@ func Create(fname string) *Writer {
 
 // Header writes a header block to the file and returns its header index.
 func (wr *Writer) Header(x interface{}) int {
-	pos, _ := wr.f.Seek(0, 1)
-
 	pos, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
 	wr.headerOffsets = append(wr.headerOffsets, pos)
@@ -71,7 +69,7 @@ func (wr *Writer) newGroup(g group) {
 func (wr *Writer) Data(x interface{}) int {
 	writer := wr.writers[len(wr.writers) - 1]
 	writer.writeData(wr.f, x)
-
+	
 	wr.groupBlocks[len(wr.groupBlocks) - 1]++
 	wr.blocks++
 	return wr.blocks - 1
@@ -80,10 +78,7 @@ func (wr *Writer) Data(x interface{}) int {
 // Close writes internal bookkeeping information to the end of the file
 // and closes it.
 func (wr *Writer) Close() {
-	// Finalize running data.
-	
 	defer wr.f.Close()
-
 	tailStart, err := wr.f.Seek(0, 1)
 	if err != nil { panic(err.Error()) }
 
