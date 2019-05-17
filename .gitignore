@@ -51,5 +51,8 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+# Python
+*.pyc
+
 # test files
-.test
+*.test
