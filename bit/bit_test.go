@@ -1,6 +1,7 @@
 package bit
 
 import (
+	"os"
 	"math/rand"
 	"testing"
 )
@@ -29,105 +30,39 @@ func TestArray(t *testing.T) {
 	}
 }
 
-func BenchmarkArray10(b *testing.B) {
-	bits := 10
-	data := make([]uint64, 512)
-	for i := range data {
-		data[i] = uint64(rand.Int63())
+func TestArrayBuffer(t *testing.T) {
+	fname := "../test_files/array_buffer.test"
+	f, err := os.Create(fname)
+	if err != nil { panic(err.Error()) }
+
+	lengths := []int{10, 5, 1, 20}
+	bits := make([]int, 4)
+	ab := &ArrayBuffer{ }
+
+	for i := range lengths {
+		data := ab.Uint64(lengths[i])
+		for j := range data { data[j] = uint64(j) }
+		bits[i] = ab.Write(f, data)
 	}
 
-	b.SetBytes(int64(len(data) * bits))
+	f.Close()
 
-	b.ResetTimer()
+	ab = &ArrayBuffer{ }
 
-	for i := 0; i < b.N; i++ {
-		_ = NewArray(bits, data)
-	}
-}
+	f, err = os.Open(fname)
+	if err != nil { panic(err.Error()) }
 
-func BenchmarkArray20(b *testing.B) {
-	bits := 20
-	data := make([]uint64, 512)
-	for i := range data {
-		data[i] = uint64(rand.Int63())
-	}
-
-	b.SetBytes(int64(len(data) * bits))
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_ = NewArray(bits, data)
-	}
-}
-
-func BenchmarkArray40(b *testing.B) {
-	bits := 40
-	data := make([]uint64, 512)
-	for i := range data {
-		data[i] = uint64(rand.Int63())
-	}
-
-	b.SetBytes(int64(len(data) * bits))
-
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_ = NewArray(bits, data)
-	}
-}
-
-func BenchmarkArraySlice10(b *testing.B) {
-	bits := 10
-	data := make([]uint64, 512)
-	out := make([]uint64, len(data))
-	for i := range data {
-		data[i] = uint64(rand.Int63())
-	}
-
-	arr := NewArray(bits, data)
-
-	b.SetBytes(int64(len(data) * bits))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		arr.Slice(out)
-	}
-}
-
-
-func BenchmarkArraySlice20(b *testing.B) {
-	bits := 20
-	data := make([]uint64, 512)
-	out := make([]uint64, len(data))
-	for i := range data {
-		data[i] = uint64(rand.Int63())
-	}
-
-	arr := NewArray(bits, data)
-
-	b.SetBytes(int64(len(data) * bits))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		arr.Slice(out)
-	}
-}
-
-func BenchmarkArraySlice40(b *testing.B) {
-	bits := 40
-	data := make([]uint64, 512)
-	out := make([]uint64, len(data))
-	for i := range data {
-		data[i] = uint64(rand.Int63())
-	}
-
-	arr := NewArray(bits, data)
-
-	b.SetBytes(int64(len(data) * bits))
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		arr.Slice(out)
+	for i := range lengths {
+		data := ab.Read(f, bits[i], lengths[i])
+		if len(data) != lengths[i] {
+			t.Errorf("Expected len(array_%d) = %d, but got %d.", 
+				i, lengths[i], len(data))
+		}
+		for j := range data {
+			if int(data[j]) != j {
+				t.Errorf("Expected array_%d[%d] = %d, but got %d.",
+					i, j, j, data[j])
+			}
+		}
 	}
 }

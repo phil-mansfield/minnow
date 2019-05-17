@@ -3,6 +3,7 @@ package bit
 import (
 	"fmt"
 	"math"
+	"os"
 )
 
 // Array is an array in in which elements are packed with a width of
@@ -13,6 +14,10 @@ type Array struct {
 	Length int
 	Bits byte
 	Data []byte
+}
+
+func PrecisionNeeded(max uint64) int {
+	return int(math.Ceil(math.Log2(float64(max + 1))))
 }
 
 func ArrayBytes(bits, length int) int {
@@ -76,17 +81,20 @@ func (arr *Array) Slice(out []uint64) {
 	}
 }
 
-// NewArray creates a new Array which stores only the bits least
-// signiticant bits of every element in x.
-func NewArray(bits int, x []uint64) *Array {
+func BufferedArray(bits int, x []uint64, b []byte) *Array {
 	if bits > 64 {
 		panic("Cannot pack more than 64 bits per element into a bit.Array")
 	}
-
-	// Set up buffers and commonly used values.
 	nBytes := ArrayBytes(bits, len(x))
+	if len(b) != nBytes {
+		panic(fmt.Sprintf("bit.BufferedArray given buffer of length %d, " +
+			"but length %d was required.", len(b), nBytes))
+	}
+
+	for i := range b  { b[i] = 0 }
+
 	arr := &Array{
-		Length: len(x), Bits: byte(bits), Data: make([]byte, nBytes),
+		Length: len(x), Bits: byte(bits), Data: b,
 	}
 
 	buf, tBuf := [8]byte{ }, [9]byte{ }
@@ -123,4 +131,76 @@ func NewArray(bits int, x []uint64) *Array {
 	}
 
 	return arr
+}
+
+// NewArray creates a new Array which stores only the bits least
+// signiticant bits of every element in x.
+func NewArray(bits int, x []uint64) *Array {
+	// Set up buffers and commonly used values.
+	nBytes := ArrayBytes(bits, len(x))
+	return BufferedArray(bits, x, make([]byte, nBytes))
+}
+
+// ArrayBuffer allows for Arrays to be read from and written to files without
+// excess heap allocation.
+type ArrayBuffer struct {
+	byteBuf []byte
+	uint64Buf []uint64
+}
+
+func (ab *ArrayBuffer) Write(f *os.File, x []uint64) (bits int) {
+	max := x[0]
+	for i := range x {
+		if x[i] > max { max = x[i] }
+	}
+
+	// Don't write anything for 0 bits.
+	if max == 0 { return 0 }
+
+	bits = PrecisionNeeded(uint64(max))
+	ab.setByteSize(ArrayBytes(bits, len(x)))
+	arr := BufferedArray(bits, x, ab.byteBuf)
+
+	f.Write(arr.Data)
+
+	return bits
+}
+
+func (ab *ArrayBuffer) Read(f *os.File, bits, n int) []uint64 {
+	ab.setUint64Size(n)
+	if bits == 0 {
+		for i := range ab.uint64Buf { ab.uint64Buf[i] = 0 }
+		return ab.uint64Buf
+	}
+
+	ab.setByteSize(ArrayBytes(bits, n))
+	arr :=Array{ Length: n, Bits: byte(bits), Data: ab.byteBuf }
+	f.Read(ab.byteBuf)
+	arr.Slice(ab.uint64Buf)
+	return ab.uint64Buf
+}
+
+func (ab *ArrayBuffer) Uint64(n int) []uint64 {
+	ab.setUint64Size(n)
+	return ab.uint64Buf
+}
+
+func (ab *ArrayBuffer) setByteSize(n int) {
+	if n <= cap(ab.byteBuf) {
+		ab.byteBuf = ab.byteBuf[:n]
+		return
+	}
+	ab.byteBuf = ab.byteBuf[:cap(ab.byteBuf)]
+	nAdd := n - len(ab.byteBuf)
+	ab.byteBuf = append(ab.byteBuf, make([]byte, nAdd)...)
+}
+
+func (ab *ArrayBuffer) setUint64Size(n int) {
+	if n <= cap(ab.uint64Buf) {
+		ab.uint64Buf = ab.uint64Buf[:n]
+		return
+	}
+	ab.uint64Buf = ab.uint64Buf[:cap(ab.uint64Buf)]
+	nAdd := n - len(ab.uint64Buf)
+	ab.uint64Buf = append(ab.uint64Buf, make([]uint64, nAdd)...)
 }
