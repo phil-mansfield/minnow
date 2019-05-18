@@ -106,6 +106,41 @@ func readGroupRecord(fname string) ([]int32, []float64, string) {
 	return ix, fx, string(bText)
 }
 
+func createBitIntRecord(fname string, x1 []int64, x2 [][]int64, x3 []int64) {
+	f := Create(fname)
+	defer f.Close()
+
+	f.IntGroup(len(x1))
+	f.Data(x1)
+
+	f.Header(int64(len(x2)))
+	f.IntGroup(len(x2[0]))
+	for i := range x2 { f.Data(x2[i]) }
+
+	f.IntGroup(len(x3))
+	f.Data(x3)
+}
+
+func readBitIntRecord(fname string) ([]int64, [][]int64, []int64) {
+	f := Open(fname)
+	defer f.Close()
+
+	var x2Len int64
+	f.Header(0, &x2Len)
+
+	x1 := make([]int64, f.DataLen(0))
+	x2 := make([][]int64, x2Len)
+	for i := range x2 { x2[i] = make([]int64, f.DataLen(1 + i))}
+	x3 := make([]int64, f.DataLen(int(x2Len) + 1))
+
+	f.Data(0, x1)
+	for i := range x2 { f.Data(i+1, x2[i]) }
+	f.Data(int(x2Len)+1, x3)
+
+	return x1, x2, x3
+}
+
+
 func TestInt64Record(t *testing.T) {
 	fname := "test_files/int_record.test"
 	xs := [][]int64{
@@ -150,12 +185,38 @@ func TestGroupRecord(t *testing.T) {
 
 	if !int32sEq(ix, rdIx) {
 		t.Errorf("Written ix = %d, but read ix = %d", ix, rdIx)
-	}
-	if !float64sExactEq(fx, rdFx) {
+	} else if !float64sExactEq(fx, rdFx) {
 		t.Errorf("Written fx = %.3g, but read fx = %.3g", fx, rdFx)
-	}
-	if text != rdText {
+	} else if text != rdText {
 		t.Errorf("Written text = '%s', but read text = '%s'", text, rdText)
+	}
+}
+
+func TestBitIntRecord(t *testing.T) {
+	fname := "test_files/bit_int_record.test"
+	x1 := []int64{100, 101, 102, 104}
+	x2 := [][]int64{[]int64{1024, 1024, 1024}, []int64{0, 1023, 500}}
+	x3 := []int64{-1000000, -500000}
+
+	createBitIntRecord(fname, x1, x2, x3)
+	rdX1, rdX2, rdX3 := readBitIntRecord(fname)
+	
+	if !int64sEq(x1, rdX1) {
+		t.Errorf("Wrote x1 = %d, but read x1 = %d", x1, rdX1)
+	} 
+	if !int64sEq(x3, rdX3) {
+		t.Errorf("Wrote x3 = %d, but read x3 = %d", x3, rdX3)
+	} 
+	if len(rdX2) != len(x2) {
+		t.Errorf("Wrote x2 with length %d, but read x2 with length %d.",
+			len(x2), len(rdX2))
+	} else {
+		for i := range x2 {
+			if !int64sEq(x2[i], rdX2[i]) {
+				t.Errorf("Wrote xs[%d] = %d, but read x2[%d] = %d.",
+					i, x2, i, rdX2)
+			}
+		}
 	}
 }
 

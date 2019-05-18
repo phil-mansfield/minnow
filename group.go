@@ -43,6 +43,8 @@ func groupFromTail(f *os.File, gt int64) group {
 	switch {
 	case gt >= Int64Group && gt <= Float64Group:
 		return newFixedSizeGroupFromTail(f, gt)
+	case gt == IntGroup:
+		return newIntGroupFromTail(f)
 	}
 	panic("Unrecognized group type.")
 }
@@ -131,12 +133,14 @@ func newIntGroup(startBlock, N int) group {
 func newIntGroupFromTail(f *os.File) group {
 	g := &intGroup{ }
 	var startBlock, blocks, min, bits int64
+	g.ab = &bit.ArrayBuffer{ }
 
 	read := func() (x []int64) {
 		binaryRead(f, &min)
 		binaryRead(f, &bits)
-		buf := g.ab.Read(f, int(bits), int(g.N))
-		out := make([]int64, g.N)
+
+		buf := g.ab.Read(f, int(bits), int(blocks))
+		out := make([]int64, blocks)
 		for i := range out { out[i] = min + int64(buf[i] )}
 		return out
 	}
@@ -163,9 +167,8 @@ func (g *intGroup) writeTail(f *os.File) {
 		bits := g.ab.Bits(buf)
 
 		binaryWrite(f, min)
-		binaryWrite(f, bits)
+		binaryWrite(f, int64(bits))
 		g.ab.Write(f, buf, bits)
-
 	}
 
 	binaryWrite(f, int64(g.N))
