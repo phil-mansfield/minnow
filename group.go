@@ -222,16 +222,18 @@ type floatGroup struct {
 	ig *intGroup
 	low, high float32
 	pixels int64
-	periodic bool
+	periodic uint8
 	buf []int64
 }
 
 func newFloatGroup(
 	startBlock, N int, low, high float32, pixels int64, periodic bool,
 ) group {
+	u8Periodic := uint8(0)
+	if periodic { u8Periodic = 1 }
 	return &floatGroup{
 		ig: newIntGroup(startBlock, N).(*intGroup),
-		low: low, high: high, pixels: pixels, periodic: periodic,
+		low: low, high: high, pixels: pixels, periodic: u8Periodic,
 	}
 }
 
@@ -250,7 +252,7 @@ func (g *floatGroup) readData(f *os.File, b int, x interface{}) {
 	out := x.([]float32)
 	g.buf = resizeInt64(g.buf, int(g.ig.N))
 	g.ig.readData(f, b, g.buf)
-	if g.periodic { bound(g.buf, 0, g.pixels) }
+	if g.periodic == 1 { bound(g.buf, 0, g.pixels) }
 
 	L := g.high - g.low
 	dx := L / float32(g.pixels)
@@ -268,7 +270,7 @@ func (g *floatGroup) writeData(f *os.File, x interface{}) {
 	for i := range g.buf {
 		g.buf[i] = int64(math.Floor(float64((data[i] - g.low) / dx)))
 	}
-	if g.periodic {
+	if g.periodic == 1 {
 		bound(g.buf, 0, g.pixels)
 		min := periodicMin(g.buf, g.pixels)
 		bound(g.buf, min, g.pixels)

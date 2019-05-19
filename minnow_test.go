@@ -140,6 +140,53 @@ func readBitIntRecord(fname string) ([]int64, [][]int64, []int64) {
 	return x1, x2, x3
 }
 
+type qFloatRecordHeader struct {
+	Dx1, Dx2 float32
+	Limit [2]float32
+	X1Blocks, X2Blocks int64
+}
+
+func createQFloatRecord(
+	fname string, limit [2]float32, dx1, dx2 float32, x1, x2 [][]float32,
+) {
+	hd := &qFloatRecordHeader{
+		Dx1: dx1, Dx2: dx2, Limit: limit,
+		X1Blocks: int64(len(x1)),
+		X2Blocks: int64(len(x2)),
+	}
+
+	f := Create(fname)
+	defer f.Close()
+
+	f.Header(hd)
+	f.FloatGroup(len(x1[0]), limit, dx1)
+	for i := range x1 { f.Data(x1[i]) }
+	f.FloatGroup(len(x2[0]), limit, dx2)
+	for i := range x2 { f.Data(x2[i]) }
+}
+
+func readQFloatRecord(fname string) (x1, x2 [][]float32) {
+	hd := &qFloatRecordHeader{ }
+	
+	f := Open(fname)
+	defer f.Close()
+
+	f.Header(0, hd)
+	x1 = make([][]float32, hd.X1Blocks)
+	x2 = make([][]float32, hd.X2Blocks)
+
+	for i1 := range x1 {
+		x1[i1] = make([]float32, f.DataLen(i1))
+		f.Data(i1, x1[i1])
+	}
+	for i2 := range x2 {
+		idx := i2 + int(hd.X1Blocks)
+		x2[i2] = make([]float32, f.DataLen(idx))
+		f.Data(idx, x2[i2])
+	}
+
+	return x1, x2
+}
 
 func TestInt64Record(t *testing.T) {
 	fname := "test_files/int_record.test"
@@ -220,6 +267,48 @@ func TestBitIntRecord(t *testing.T) {
 	}
 }
 
+func TestQFloatRecord(t *testing.T) {
+	fname := "test_files/q_float_record.test"
+	limit := [2]float32{-50, 100}
+	dx1, dx2 := float32(1.0), float32(10.0)
+	x1 := [][]float32{
+		[]float32{-50, 0, 50, 49},
+		[]float32{25, 25, 25, 25},
+	}
+	x2 := [][]float32{
+		[]float32{-50, 0, 50, 49, 0},
+		[]float32{1, 2, 3, 4, 5},
+		[]float32{0, 20, 0, 20, 0},
+	}
+
+	createQFloatRecord(fname, limit, dx1, dx2, x1, x2)
+	rdX1, rdX2 := readQFloatRecord(fname)
+
+	if len(rdX1) != len(x1) {
+		t.Errorf("wrote len(x1) = %d, but read len(x1) = %d",
+			len(x1), len(rdX1))
+	} else {
+		for i := range x1 {
+			if !float32sEq(x1[i], rdX1[i], dx1) {
+				t.Errorf("wrote x1[%d] = %.1f, but read x1[%d] = %.1f",
+					i, x1[i], i, rdX1[i])
+			}
+		}
+	}
+
+	if len(rdX2) != len(x2) {
+		t.Errorf("wrote len(x2) = %d, but read len(x2) = %d",
+			len(x2), len(rdX2))
+	} else {
+		for i := range x2 {
+			if !float32sEq(x2[i], rdX2[i], dx2) {
+				t.Errorf("wrote x2[%d] = %.1f, but read x2[%d] = %.1f",
+					i, x2[i], i, rdX2[i])
+			}
+		}
+	}
+}
+
 func int32sEq(x, y []int32) bool {
 	if len(x) != len(y) { return false }
 	for i := range x {
@@ -232,6 +321,14 @@ func int64sEq(x, y []int64) bool {
 	if len(x) != len(y) { return false }
 	for i := range x {
 		if x[i] != y[i] { return false }
+	}
+	return true
+}
+
+func float32sEq(x, y []float32, eps float32) bool {
+	if len(x) != len(y) { return false }
+	for i := range x {
+		if x[i] + eps < y[i] || x[i] - eps > y[i] { return false }
 	}
 	return true
 }
