@@ -61,6 +61,11 @@ func (wr *Writer) IntGroup(N int) {
 	wr.newGroup(newIntGroup(wr.blocks, N))
 }
 
+func (wr *Writer) FloatGroup(N int, lim [2]float32, dx float32) {
+	pixels := int64((lim[1] - lim[0]) / dx)
+	wr.newGroup(newFloatGroup(wr.blocks, N, lim[0], lim[1], pixels, true))
+}
+
 // newGroup starts a new group.
 func (wr *Writer) newGroup(g group) {
 	wr.writers = append(wr.writers, g)

@@ -1,6 +1,8 @@
 package minnow
 
 import (
+	"math"
+	"math/rand"
 	"os"
 	"github.com/phil-mansfield/minnow/bit"
 )
@@ -17,6 +19,7 @@ const (
 	Float64Group
 	Float32Group
 	IntGroup
+	FloatGroup
 )
 
 var fixedSizeBytes = []int{
@@ -45,6 +48,8 @@ func groupFromTail(f *os.File, gt int64) group {
 		return newFixedSizeGroupFromTail(f, gt)
 	case gt == IntGroup:
 		return newIntGroupFromTail(f)
+	case gt == FloatGroup:
+		return newFloatGroupFromTail(f)
 	}
 	panic("Unrecognized group type.")
 }
@@ -209,6 +214,90 @@ func (g *intGroup) readData(f *os.File, b int, x interface{}) {
 	for i := range buf { out[i] = min + int64(buf[i]) }
 }
 
+/////////////////
+// FloatGroup //
+/////////////////
+
+type floatGroup struct {
+	ig *intGroup
+	low, high float32
+	pixels int64
+	periodic bool
+	buf []int64
+}
+
+func newFloatGroup(
+	startBlock, N int, low, high float32, pixels int64, periodic bool,
+) group {
+	return &floatGroup{
+		ig: newIntGroup(startBlock, N).(*intGroup),
+		low: low, high: high, pixels: pixels, periodic: periodic,
+	}
+}
+
+func (g *floatGroup) groupType() int64 {
+	return FloatGroup
+}
+func (g *floatGroup) length(b int) int {
+	return g.ig.length(b)
+}
+
+func (g *floatGroup) blockOffset(b int) int64 {
+	return g.ig.blockOffset(b)
+}
+
+func (g *floatGroup) readData(f *os.File, b int, x interface{}) {
+	out := x.([]float32)
+	g.buf = resizeInt64(g.buf, int(g.ig.N))
+	g.ig.readData(f, b, g.buf)
+	if g.periodic { bound(g.buf, 0, g.pixels) }
+
+	L := g.high - g.low
+	dx := L / float32(g.pixels)
+	for i := range g.buf {
+		out[i] = dx*float32(float64(g.buf[i]) + rand.Float64()) + g.low
+	}
+}
+
+func (g *floatGroup) writeData(f *os.File, x interface{}) {
+	data := x.([]float32)
+	g.buf = resizeInt64(g.buf, int(g.ig.N))
+
+	dx := (g.high - g.low) / float32(g.pixels)
+	
+	for i := range g.buf {
+		g.buf[i] = int64(math.Floor(float64((data[i] - g.low) / dx)))
+	}
+	if g.periodic {
+		bound(g.buf, 0, g.pixels)
+		min := periodicMin(g.buf, g.pixels)
+		bound(g.buf, min, g.pixels)
+	}
+
+	g.ig.writeData(f, g.buf)
+}
+func (g *floatGroup) writeTail(f *os.File) {
+	g.ig.writeTail(f)
+	binaryWrite(f, g.low)
+	binaryWrite(f, g.high)
+	binaryWrite(f, g.pixels)
+	binaryWrite(f, g.periodic)
+}
+
+func newFloatGroupFromTail(f *os.File) group {
+	g := &floatGroup{ }
+	g.ig = newIntGroupFromTail(f).(*intGroup)
+	binaryRead(f, &g.low)
+	binaryRead(f, &g.high)
+	binaryRead(f, &g.pixels)
+	binaryRead(f, &g.periodic)
+	return g
+}
+
+///////////////////////
+// utility functions //
+///////////////////////
+
 func int64Min(x []int64) int64 {
 	min := x[0]
 	for i := range x {
@@ -223,4 +312,57 @@ func uint64Min(x []uint64) uint64 {
 		if x[i] < min { min = x[i] }
 	}
 	return min
+}
+
+func resizeInt64(x []int64, n int) []int64 {
+	if cap(x) >= n { return x[:n] }
+	x = x[:cap(x)]
+	return append(x, make([]int64, n - len(x))...)
+}
+
+func bound(x []int64, min, pixels int64) {
+	for i := range x {
+		if x[i] < min {
+			x[i] += pixels
+		} else if x[i] >=  min + pixels {
+			x[i] -= pixels
+		}
+	}
+}
+
+func periodicMin(x []int64, pixels int64) int64 {	
+	x0, width := x[0], int64(1)
+		
+	for _, xi := range x {
+		x1 := x0 + width - 1
+		if x1 >= pixels { x1 -= pixels }
+
+		d0 := periodicDistance(xi, x0, pixels)
+		d1 := periodicDistance(xi, x1, pixels)
+
+		if d0 > 0 && d1 < 0 { continue }
+
+		if d1 > -d0 {
+			width += d1
+		} else {
+			x0 += d0
+			if x0 < 0 { x0 += pixels }
+			width -= d0
+		}
+
+		if width > pixels/2 { return 0 }
+	}
+
+	return x0
+}
+
+// periodicDistance computes the distance from x0 to x.
+func periodicDistance(x, x0, pixels int64) int64 {
+	d := x - x0
+	if d >= 0 {
+		if d > pixels - d { return d - pixels }
+	} else {
+		if d < -(d + pixels) { return pixels + d }
+	}
+	return d
 }
