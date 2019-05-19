@@ -61,6 +61,9 @@ func (wr *Writer) IntGroup(N int) {
 	wr.newGroup(newIntGroup(wr.blocks, N))
 }
 
+// FloatGroup starts a float group which stores float32s to within a precision
+// of dx. lim gives the lower and upper limits for the the data set. The data is
+// assumed to be periodic.
 func (wr *Writer) FloatGroup(N int, lim [2]float32, dx float32) {
 	pixels := int64((lim[1] - lim[0]) / dx)
 	wr.newGroup(newFloatGroup(wr.blocks, N, lim[0], lim[1], pixels, true))
