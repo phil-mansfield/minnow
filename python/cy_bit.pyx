@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -16,34 +17,34 @@ def array(np.uint64_t bits, np.uint64_t[:] x):
     cdef np.uint64_t buf_bytes = np.uint64(bits / 8)
     if buf_bytes * 8 < bits: buf_bytes += 1
 
-    cdef np.uint64_t mask = (~np.uint64(0)) >> (64 - bits)
-    
-    cdef int i
-    cdef int j
-    cdef np.uint64_t xi
-    cdef np.uint64_t curr_bit
-    cdef np.uint64_t start_byte
-    cdef np.uint64_t end_byte
+    cdef np.uint64_t mask = (~np.uint64(0)) >> np.uint64(64 - bits)
+
+    cdef Py_ssize_t i, j
+    cdef np.uint64_t xi, curr_bit, start_byte, end_byte
     for i in range(len(x)):
         xi = x[i]
         curr_bit = (i*bits) % 8
 
         for j in range(buf_bytes):
-            buf[j] = np.uint8(xi >> 8*j)
+            buf[j] = <np.uint8_t>(xi >> 8*j)
             
         t_buf[buf_bytes] = 0
         for j in range(buf_bytes):
             t_buf[j] = buf[j] << curr_bit
 
+        for j in range(buf_bytes):
+            t_buf[j + 1] |= buf[j] >> (8-curr_bit)
+
         start_byte = (i*bits) / 8
         end_byte = ((i+1)*bits - 1) / 8
+
 
         for j in range(end_byte - start_byte + 1):
             b[start_byte + j] |= t_buf[j]
 
-    return b
+    return np.array(b)
 
-def slice(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
+def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
     cdef np.uint64_t[:] out = np.zeros(length, dtype=np.uint64)
     cdef np.uint8_t[:] buf = np.zeros(8, np.uint8)
     cdef np.uint8_t[:] t_buf = np.zeros(9, np.uint8)
@@ -61,6 +62,8 @@ def slice(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
     cdef np.uint64_t xi
     cdef np.uint8_t start_mask
     cdef np.uint8_t end_mask
+    cdef np.uint64_t eight = 8
+
     for i in range(length):
         start_bit = (i*bits) % 8
         next_start_bit = (start_bit + bits) % 8
@@ -72,22 +75,24 @@ def slice(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
         for j in range(t_buf_bytes):
             t_buf[j] = arr[start_byte + j]
 
-        start_mask = ~np.uint8(0) << start_bit
-        end_ask = ~np.uint8(0) >> (8 - next_start_bit)
-        if next_start_bit == 0: end_mask = ~np.uint8(0)
+        start_mask = (0xff << start_bit) & 0xff
+        end_mask = (0xff >> (<np.uint8_t>(8 - next_start_bit))) & 0xff
+        if next_start_bit == 0: end_mask = 0xff
 
-        t_buf[j] &= start_mask
-        t_buf[j] &= end_mask
+        t_buf[0] &= start_mask
+        t_buf[t_buf_bytes - 1] &= end_mask
 
         for j in range(buf_bytes):
             buf[j] = t_buf[j] >> start_bit
         for j in range(buf_bytes):
-            buf[j] |= t_buf[j+1] << (8 - start_bit)
+            buf[j] |= t_buf[j+1] << (eight - start_bit)
 
-        for i in range(t_buf_bytes): t_buf[i] = 0
+
+        for j in range(t_buf_bytes): t_buf[j] = 0
 
         xi = 0
         for j in range(buf_bytes):
-            xi |= np.uint64(buf[j]) << (8*j)
+            xi |= (<np.uint64_t>buf[j]) << (<np.uint64_t>(8*j))
+        out[i] = xi
 
-    return out
+    return np.array(out)

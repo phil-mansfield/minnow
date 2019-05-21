@@ -3,6 +3,7 @@ from __future__ import division, print_function
 import numpy as np
 import minnow
 import struct
+import bit
 
 def create_int_record(fname, text, xs):
     f = minnow.create(fname)
@@ -89,6 +90,17 @@ def test_group_record():
     assert(np.all(rd_ix == ix))
     assert(np.all(np.abs(fx - rd_fx) < 1e-6))
 
+def test_bit_array():
+    bits = np.arange(7, 64, dtype=np.int)
+
+    x = np.arange(100, dtype=np.int) 
+
+    for b in bits:
+        arr = bit.array(b, x)
+        y = bit.from_array(arr, b, len(x))
+        assert(np.all(x == y))
+
 if __name__ == "__main__":
     test_int_record()
     test_group_record()
+    test_bit_array()
