@@ -9,6 +9,9 @@ def precision_needed(max):
 def array_bytes(bits, length):
     return int(np.ceil(float(bits * length) / 8))
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 def array(np.uint64_t bits, np.uint64_t[:] x):
     cdef np.uint8_t[:] b = np.zeros(array_bytes(bits, len(x)), dtype=np.uint8)
     cdef np.uint8_t[:] buf = np.zeros(8, np.uint8)
@@ -44,6 +47,9 @@ def array(np.uint64_t bits, np.uint64_t[:] x):
 
     return np.array(b)
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
     cdef np.uint64_t[:] out = np.zeros(length, dtype=np.uint64)
     cdef np.uint8_t[:] buf = np.zeros(8, np.uint8)
