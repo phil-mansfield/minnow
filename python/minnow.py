@@ -60,6 +60,9 @@ class Writer(object):
     def int_group(self, N):
         self._new_group(_IntGroup(self.blocks, N))
 
+    def float_group(self, N):
+        self._new_group(_FloatGroup(self.blocks, N))
+
     def _new_group(self, g):
         self.writers.append(g)
         self.group_blocks.append(0)
@@ -314,3 +317,53 @@ def _new_int_group_from_tail(f):
         g.add_block(bit.array_bytes(g.bits[i], g.N))
 
     return g
+    
+class _FloatGroup(_Group, _BlockIndex):
+    def __init__(self, start_block, N, low, high, pixels, periodic):
+        self.low, self.high = low, high
+        self.pixels, self.periodic = pixels, periodic
+        self.ig = _IntGroup(start_block, N)
+
+    def group_type(self):
+        return float_group
+
+    def write_data(self, f, x):
+        dx = (self.high - self.low) / self.pixels
+        quant = np.asarray(np.floor((x - self.low) / dx), dtype=uint64)
+        if self.periodic:
+            min = bit.periodic_min(quant, self.pixels)
+            bound(quant, min, self.pixels)
+        self.ig.write_data(f, quant)
+
+
+    def write_tail(self, f):
+        self.ig.write_tail(f)
+        f.write(struct.pack("<ffqc", self.low, self.high,
+                            self.pixels, self.periodic))
+
+    def read_data(self, f, b):
+        quant = self.ig.read_data(f, b)
+        if self.periodic: bound(quant, 0, self.pixels)
+        dx = (self.high - self.low) / self.pixels
+        return quant + self.low + random.rand(len(quant))*dx
+
+    def block_offset(self, b):
+        return _BlockIndex.block_offset(self, b)
+
+    def length(self):
+        return self.N
+
+def _new_float_group_from_tail(f):
+    g = _FloatGroup(0, 0)
+    g.ig = _new_int_group_from_tail(f)
+    self.low, self.high, self.pixels, self.periodic = struct.unpack(
+        "<ffqc", f.read(2*4 + 8 + 1)
+    )
+    self.periodic = self.periodic > 0
+
+def bound(x, min, pixels):
+    x[x < min] += pixels
+    x[x > min + pixels] -= pizels
+    
+    
+    
