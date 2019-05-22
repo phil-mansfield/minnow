@@ -6,6 +6,7 @@ import struct
 import sys
 import copy
 import abc
+import bit
 
 MAGIC = 0xacedad
 VERSION = 1
@@ -14,12 +15,17 @@ int64_group = 0
 int32_group = 1
 int16_group = 2
 int8_group = 3
+
 uint64_group = 4
 uint32_group = 5
 uint16_group = 6
 uint8_group = 7
+
 float64_group = 8
 float32_group = 9 
+
+int_group = 10
+float_group = 11
 
 _py_open = open
 
@@ -116,13 +122,22 @@ class Reader(object):
     def header(self, i, data_type):
         self.f.seek(self.header_offsets[i], 0)
         b = self.f.read(self.header_sizes[i])
+
         if data_type == "s":
             return b.decode("ascii")
         elif type(data_type) == str:
-            return struct.unpack("<" + data_type, b)
+            data = struct.unpack("<" + data_type, b)
+            if len(data) == 1:
+                return data[0]
+            else:
+                return data
         elif type(data_type) == type:
-            dtype = np.dtype(np.int64).newbyteorder("<")
-            return np.frombuffer(b, dtype=dtype)
+            dtype = np.dtype(data_type).newbyteorder("<")
+            data = np.frombuffer(b, dtype=dtype)
+            if len(data) == 1:
+                return data[0]
+            else:
+                return data
         
     def blocks(self):
         return self.blocks
@@ -131,7 +146,7 @@ class Reader(object):
         i = self.block_index[b]
         self.f.seek(self.group_offsets[i], 0)
         self.f.seek(self.readers[i].block_offset(b), 1)
-        return self.readers[i].read_data(self.f)
+        return self.readers[i].read_data(self.f, b)
         
     def data_type(self, b):
         return self.group_types[self.block_index[b]]
@@ -150,11 +165,13 @@ class _Group:
     @abc.abstractmethod
     def block_offset(self, b): pass
     @abc.abstractmethod
-    def read_data(self, f, out): pass
+    def read_data(self, f, b): pass
 
 def _group_from_tail(f, gt):
     if gt >= int64_group and gt <= float64_group:
         return _new_fixed_size_group_from_tail(f, gt)
+    if gt == int_group:
+        return _new_int_group_from_tail(f)
     assert(0)
 
 _fixed_size_bytes = [8, 4, 2, 1, 8, 4, 2, 1, 8, 4]
@@ -217,12 +234,15 @@ class _FixedSizeGroup(_Group, _BlockIndex):
     def write_tail(self, f):
         f.write(struct.pack("<qqq", self.N, self.start_block, self.blocks()))
 
-    def read_data(self, f):
+    def read_data(self, f, b):
         dtype = _fixed_size_dtypes[self.gt]
         return np.frombuffer(f.read(self.N*self.type_size), dtype=dtype)
 
     def block_offset(self, b):
         return _BlockIndex.block_offset(self, b)
+
+    def length(self):
+        return g.N
 
 
 def _new_fixed_size_group_from_tail(f, gt):
@@ -231,3 +251,63 @@ def _new_fixed_size_group_from_tail(f, gt):
     for i in range(blocks):
         g.add_block(g.type_size*g.N)
     return g    
+
+
+class _IntGroup(_Group, _BlockIndex):
+    def __init__(self, start_block, N):
+        _BlockIndex.__init__(self, start_block)
+        self.N = N
+        self.mins = []
+        self.bits = []
+
+    def group_type(self):
+        return int_group
+
+    def write_data(self, f, x):
+        min = np.min(x)
+        bits = bit.precision_needed(np.max(x) - min)
+        bit.write_array(f, bits, x - min)
+
+        g.mins.append(min)
+        g.bits.append(bits)
+        g.add_block(bit.arry_bytes(bits, g.N))
+
+    def write_tail(self, f):
+        def write(x):
+            min = np.min(x)
+            x -= min
+            bits = bit.precision_needed(np.max(x))
+            f.write(struct.pack("<qq", min, bits))
+            bit.write_array(f, bits, x)
+
+        f.write(struct.pack("<qqq", self.N, self.start_block, self.blocks()))
+        write(np.array(self.mins))
+        write(np.array(self.bits))
+
+    def read_data(self, f, b):
+        b_idx = b - self.start_block
+        bits, min = self.bits[b_idx], self.mins[b_idx]
+        return bit.read_array(f, bits, self.N) + min
+
+    def block_offset(self, b):
+        return _BlockIndex.block_offset(self, b)
+
+    def length(self):
+        return self.N
+
+def _new_int_group_from_tail(f):
+    N, start_block, blocks = struct.unpack("<qqq", f.read(3*8))
+    g = _IntGroup(start_block, N)
+
+    def read():
+        min, bits = struct.unpack("<qq", f.read(2*8))
+        out = bit.read_array(f, bits, blocks)
+        return out + min
+    
+    g.mins = read()
+    g.bits = read()
+
+    for i in range(blocks):
+        g.add_block(bit.array_bytes(g.bits[i], g.N))
+
+    return g
