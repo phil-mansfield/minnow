@@ -271,7 +271,6 @@ func (g *floatGroup) writeData(f *os.File, x interface{}) {
 		g.buf[i] = int64(math.Floor(float64((data[i] - g.low) / dx)))
 	}
 	if g.periodic == 1 {
-		bound(g.buf, 0, g.pixels)
 		min := periodicMin(g.buf, g.pixels)
 		bound(g.buf, min, g.pixels)
 	}
