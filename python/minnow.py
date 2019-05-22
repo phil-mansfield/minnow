@@ -176,8 +176,10 @@ class _Group:
 def _group_from_tail(f, gt):
     if gt >= int64_group and gt <= float64_group:
         return _new_fixed_size_group_from_tail(f, gt)
-    if gt == int_group:
+    elif gt == int_group:
         return _new_int_group_from_tail(f)
+    elif gt == float_group:
+        return _new_float_group_from_tail(f)
     assert(0)
 
 _fixed_size_bytes = [8, 4, 2, 1, 8, 4, 2, 1, 8, 4]
@@ -345,21 +347,23 @@ class _FloatGroup(_Group, _BlockIndex):
         quant = self.ig.read_data(f, b)
         if self.periodic: bound(quant, 0, self.pixels)
         dx = (self.high - self.low) / self.pixels
-        return quant + self.low + random.rand(len(quant))*dx
+        out = self.low + (quant + random.rand(len(quant)))*dx
+        return out
 
     def block_offset(self, b):
-        return _BlockIndex.block_offset(self, b)
+        return self.ig.block_offset(b)
 
     def length(self):
         return self.N
 
 def _new_float_group_from_tail(f):
-    g = _FloatGroup(0, 0)
+    g = _FloatGroup(0, 0, 0, 0, 0, 0)
     g.ig = _new_int_group_from_tail(f)
-    self.low, self.high, self.pixels, self.periodic = struct.unpack(
+    g.low, g.high, g.pixels, g.periodic = struct.unpack(
         "<ffqc", f.read(2*4 + 8 + 1)
     )
-    self.periodic = self.periodic > 0
+    g.periodic = g.periodic == 0
+    return g
 
 def bound(x, min, pixels):
     x[x < min] += pixels

@@ -156,10 +156,54 @@ def test_bit_int_record():
     assert(np.all(rd_x2[1] == x2[1]))
     assert(np.all(rd_x3 == x3))
 
+def open_q_float_record(fname):
+    f = minnow.open(fname)
+    
+    dx1, dx2, low, high, x1_len, x2_len = f.header(0, "ffffqq")
+    x1, x2 = [None]*x1_len, [None]*x2_len
+    for i1 in range(x1_len):
+        x1[i1] = f.data(i1)
+    for i2 in range(x2_len):
+        x2[i2] = f.data(i2 + x1_len)
+
+    f.close()
+
+    return x1, x2
+
+def test_q_float_record():
+    fname = "../test_files/q_float_record.test"
+    limit = (-50, 100)
+    dx1, dx2 = 1.0, 10.0
+    x1 = [
+        np.array([-50, 0, 50, 49]),
+        np.array([25, 25, 25, 25])
+    ]
+    x2 = [
+        np.array([-50, 0, 50, 49, 0]),
+        np.array([1, 2, 3, 4, 5]),
+        np.array([0, 20, 0, 20, 0])
+    ]
+
+    #create_q_float_record(name, limit, dx1, dx2, x1, x2)
+    rd_x1, rd_x2 = open_q_float_record(fname)
+
+    assert(len(x1) == len(rd_x1))
+    for i in range(len(x1)):
+        assert(len(x1[i]) == len(rd_x1[i]))
+        assert(np.all(eps_eq(x1[i], rd_x1[i], dx1)))
+
+    assert(len(x2) == len(rd_x2))
+    for i in range(len(x2)):
+        assert(len(x2[i]) == len(rd_x2[i]))
+        assert(np.all(eps_eq(x2[i], rd_x2[i], dx2)))
+
+def eps_eq(x, y, eps): return (x + eps > y) & (x - eps < y)
+
 if __name__ == "__main__":
     test_int_record()
     test_group_record()
     test_bit_array()
     test_bit_int_record()
+    test_q_float_record()
 
     #bench_bit_array()
