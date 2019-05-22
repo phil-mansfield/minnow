@@ -67,3 +67,46 @@ func TestArrayBuffer(t *testing.T) {
 		}
 	}
 }
+
+func benchmarkReadArrayN(b *testing.B, bits int) {
+	x := make([]uint64, 100 * 1000)
+	for i := range x { x[i] = uint64(i % 100) }
+	buf := make([]byte, ArrayBytes(bits, len(x)))
+
+	b.SetBytes(int64(8*len(x)))
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		BufferedArray(bits, x, buf)
+	}
+}
+
+func benchmarkWriteArrayN(b *testing.B, bits int) {
+	x := make([]uint64, 100 * 1000)
+	for i := range x { x[i] = uint64(i % 100) }
+	arr := NewArray(bits, x)
+
+	b.SetBytes(int64(8*len(x)))
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		arr.Slice(x)
+	}
+}
+
+
+func BenchmarkReadArray64(b *testing.B) { benchmarkReadArrayN(b, 64) }
+func BenchmarkReadArray45(b *testing.B) { benchmarkReadArrayN(b, 45) }
+func BenchmarkReadArray32(b *testing.B) { benchmarkReadArrayN(b, 32) }
+func BenchmarkReadArray23(b *testing.B) { benchmarkReadArrayN(b, 21) }
+func BenchmarkReadArray16(b *testing.B) { benchmarkReadArrayN(b, 16) }
+func BenchmarkReadArray11(b *testing.B) { benchmarkReadArrayN(b, 11) }
+func BenchmarkReadArray8(b *testing.B) { benchmarkReadArrayN(b, 8) }
+
+func BenchmarkWriteArray64(b *testing.B) { benchmarkWriteArrayN(b, 64) }
+func BenchmarkWriteArray45(b *testing.B) { benchmarkWriteArrayN(b, 45) }
+func BenchmarkWriteArray32(b *testing.B) { benchmarkWriteArrayN(b, 32) }
+func BenchmarkWriteArray23(b *testing.B) { benchmarkWriteArrayN(b, 21) }
+func BenchmarkWriteArray16(b *testing.B) { benchmarkWriteArrayN(b, 16) }
+func BenchmarkWriteArray11(b *testing.B) { benchmarkWriteArrayN(b, 11) }
+func BenchmarkWriteArray8(b *testing.B) { benchmarkWriteArrayN(b, 8) }
