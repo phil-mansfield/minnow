@@ -114,6 +114,21 @@ def bench_bit_array():
         print("%d bits: %g MB/s" % (bits,  (8*len(x)/ dt) / 1e6))
 
 
+def write_bit_int_record(fname, x1, x2, x3):
+    f = minnow.create(fname)
+
+    f.int_group(len(x1))
+    f.data(x1)
+
+    f.header(struct.pack("<q", len(x2)))
+    f.int_group(len(x2[0]))
+    for i in range(len(x2)): f.data(x2[i])
+
+    f.int_group(len(x3))
+    f.data(x3)
+
+    f.close()
+
 def read_bit_int_record(fname):
     f = minnow.open(fname)
     
@@ -133,6 +148,7 @@ def test_bit_int_record():
     x2 = [np.array([1024, 1024, 1024]), np.array([0, 1023, 500])]
     x3 = np.array([-1000000, -500000])
 
+    write_bit_int_record(fname, x1, x2, x3)
     rd_x1, rd_x2, rd_x3 = read_bit_int_record(fname)
     
     assert(np.all(x1 == rd_x1))

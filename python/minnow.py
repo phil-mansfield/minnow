@@ -57,6 +57,9 @@ class Writer(object):
         group_type = _fixed_size_type_dict[dtype]
         self._new_group(_FixedSizeGroup(self.blocks, N, group_type))
 
+    def int_group(self, N):
+        self._new_group(_IntGroup(self.blocks, N))
+
     def _new_group(self, g):
         self.writers.append(g)
         self.group_blocks.append(0)
@@ -268,9 +271,9 @@ class _IntGroup(_Group, _BlockIndex):
         bits = bit.precision_needed(np.max(x) - min)
         bit.write_array(f, bits, x - min)
 
-        g.mins.append(min)
-        g.bits.append(bits)
-        g.add_block(bit.arry_bytes(bits, g.N))
+        self.mins.append(min)
+        self.bits.append(bits)
+        self.add_block(bit.array_bytes(bits, self.N))
 
     def write_tail(self, f):
         def write(x):
