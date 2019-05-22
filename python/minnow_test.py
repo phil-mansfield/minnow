@@ -4,6 +4,7 @@ import numpy as np
 import minnow
 import struct
 import bit
+import time
 
 def create_int_record(fname, text, xs):
     f = minnow.create(fname)
@@ -100,7 +101,49 @@ def test_bit_array():
         y = bit.from_array(arr, b, len(x))
         assert(np.all(x == y))
 
+def bench_bit_array():
+    x = np.arange(100000, dtype=np.uint64) % 100
+    N = 1000
+
+    for bits in [8, 11, 16, 23, 32, 45, 64]:
+        t0 = time.time()
+        for _ in range(N):
+            bit.array(bits, x)
+        t1 = time.time()
+        dt = (t1 - t0) / N
+        print("%d bits: %g MB/s" % (bits,  (8*len(x)/ dt) / 1e6))
+
+
+def read_bit_int_record(fname):
+    f = minnow.open(fname)
+    
+    x2_len = f.header(0, np.int64)
+    x1 = f.data(0)
+    x2 = [None]*x2_len
+    for i in range(x2_len): x2[i] = f.data(1 + i)
+    x3 = f.data(x2_len + 1)
+
+    f.close()
+
+    return x1, x2, x3
+
+def test_bit_int_record():
+    fname = "../test_files/bit_int_record.test"
+    x1 = np.array([100, 101, 102, 104], dtype=int)
+    x2 = [np.array([1024, 1024, 1024]), np.array([0, 1023, 500])]
+    x3 = np.array([-1000000, -500000])
+
+    rd_x1, rd_x2, rd_x3 = read_bit_int_record(fname)
+    
+    assert(np.all(x1 == rd_x1))
+    assert(np.all(rd_x2[0] == x2[0]))
+    assert(np.all(rd_x2[1] == x2[1]))
+    assert(np.all(rd_x3 == x3))
+
 if __name__ == "__main__":
     test_int_record()
     test_group_record()
     test_bit_array()
+    test_bit_int_record()
+
+    #bench_bit_array()
