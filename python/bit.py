@@ -24,3 +24,6 @@ def read_array(f, bits, length):
     buf = np.frombuffer(f.read(array_bytes(bits, length)), dtype=np.uint8)
     # The extra array conversion here is needed to get rid of a read-only bit
     return from_array(np.array(buf, dtype=np.uint8), bits, length)
+
+def periodic_min(x, pixels):
+    return cy_bit.array(np.asarray(x, dtype=np.int64), np.int64(pixels))

@@ -58,18 +58,10 @@ def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
     cdef np.uint64_t buf_bytes = np.uint64(bits / 8)
     if buf_bytes * 8 < bits: buf_bytes += 1
 
-    cdef np.uint64_t i
-    cdef np.uint64_t j
-    cdef np.uint64_t start_bit
-    cdef np.uint64_t next_start_bit
-    cdef np.uint64_t start_byte
-    cdef np.uint64_t end_byte
-    cdef np.uint64_t t_buf_bytes
-    cdef np.uint64_t xi
-    cdef np.uint8_t start_mask
-    cdef np.uint8_t end_mask
-    cdef np.uint64_t eight = 8
-
+    cdef np.uint64_t i, j, xi, start_bit, next_start_bit
+    cdef np.uint64_t start_byte, end_byte, t_buf_bytes, eight
+    cdef np.uint8_t start_mask, end_mask
+    eight = 8 # Don't ask...
     for i in range(length):
         start_bit = (i*bits) % 8
         next_start_bit = (start_bit + bits) % 8
@@ -102,3 +94,38 @@ def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
         out[i] = xi
 
     return np.array(out)
+
+def periodic_min(np.int64_t[:] x, np.int64_t pixels):
+    x0, width = x[0], 1
+    cdef np.int64_t N = pixels
+
+    cdef np.int64_t xi, x1, d0, d1
+    for i in range(N):
+        xi = x[i]
+        x1 = x0 + width - 1
+        if x1 >= pixels: x1 -= pixels
+        
+        d0 = periodic_distance(xi, x0, pixels)
+        d1 = periodic_distance(xi, x1, pixels)
+
+        if d0 > 0 and d1 < 0: continue 
+
+        if d1 > -d0:
+            width += d1
+        else:
+            x0 += d0
+            if x0 < 0: x0 += pixels
+            width -= d0
+
+        if width > pixels/2: return 0
+
+
+cdef np.int64_t periodic_distance(
+    np.int64_t x, np.int64_t x0, np.int64_t pixels
+):
+    cdef np.int64_t d = x - x0
+    if d >= 0:
+        if d > pixels - d: return d - pixels
+    else:
+        if d < -(d + pixels): return pixels + d
+    return d
