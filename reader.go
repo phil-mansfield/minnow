@@ -112,6 +112,11 @@ func (rd *Reader) Blocks() int {
 // Data reads the bth data block in the file.
 func (rd *Reader) Data(b int, out interface{}) {
 	i := rd.blockIndex[b]
+	
+	if err := TypeMatch(out, rd.DataType(b)); err != nil {
+		panic(err.Error())
+	}
+
 	_, err := rd.f.Seek(rd.groupOffsets[i], 0)
 	if err != nil { panic(err.Error()) }
 	_, err = rd.f.Seek(rd.readers[i].blockOffset(b), 1)

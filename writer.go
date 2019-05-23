@@ -11,6 +11,8 @@ type Writer struct {
 
 	headers, blocks int
 
+	currGroup int64
+
     writers []group
     headerOffsets, headerSizes []int64
 	groupBlocks []int64
@@ -30,7 +32,7 @@ func Create(fname string) *Writer {
 	f, err := os.Create(fname)
 	if err != nil { panic(err.Error()) }
 
-	wr := &Writer{ f: f }
+	wr := &Writer{ f: f, currGroup: -1 }
 	binaryWrite(wr.f, &minnowHeader{})
 
 	return wr
@@ -46,6 +48,8 @@ func (wr *Writer) Header(x interface{}) int {
 	binaryWrite(wr.f, x)
 
 	wr.headers++
+	wr.currGroup = -1
+
 	return wr.headers - 1
 }
 
@@ -71,6 +75,8 @@ func (wr *Writer) FloatGroup(N int, lim [2]float32, dx float32) {
 
 // newGroup starts a new group.
 func (wr *Writer) newGroup(g group) {
+	wr.currGroup = g.groupType()
+
 	wr.writers = append(wr.writers, g)
 	wr.groupBlocks = append(wr.groupBlocks, 0)
 
@@ -81,6 +87,12 @@ func (wr *Writer) newGroup(g group) {
 
 // Data writes a data block to the file within the most recent Group.
 func (wr *Writer) Data(x interface{}) int {
+	if wr.currGroup == -1 {
+		panic("Data written to minnow.Writer without assigning Group first.")
+	} else if err := TypeMatch(x, wr.currGroup); err != nil {
+		panic(err.Error())
+	}
+
 	writer := wr.writers[len(wr.writers) - 1]
 	writer.writeData(wr.f, x)
 	

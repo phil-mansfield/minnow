@@ -1,6 +1,7 @@
 package minnow
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 	"os"
@@ -21,6 +22,53 @@ const (
 	IntGroup
 	FloatGroup
 )
+
+var (
+	groupNames = []string{
+		"Int64Group",
+		"Int32Group",
+		"Int16Group",
+		"Int8Group",
+		"Uint64Group",
+		"Uint32Group",
+		"Uint16Group",
+		"Uint8Group",
+		"Float64Group",
+		"Float32Group",
+		"IntGroup",
+		"FloatGroup",
+	}
+)
+
+func TypeMatch(x interface{}, gt int64) error {
+	f := func(s string) error {
+		return fmt.Errorf("Got type %s for group %d.", s, groupNames[gt])
+	}
+	switch v := x.(type) {
+	case []int64:
+		_ = v // To get type switching to work
+		if !(gt == Int64Group || gt == IntGroup) { return f("[]int64") }
+	case []int32:
+		if !(gt == Int32Group) { return f("[]int32") }
+	case []int16:
+		if !(gt == Int16Group) { return f("[]int16") }
+	case []int8:
+		if !(gt == Int8Group) { return f("[]int8") }
+	case []uint64:
+		if !(gt == Uint64Group) { return f("[]uint64") }
+	case []uint32:
+		if !(gt == Uint32Group) { return f("[]uint32") }
+	case []uint16:
+		if !(gt == Uint16Group) { return f("[]int16") }
+	case []uint8:
+		if !(gt == Uint8Group) { return f("[]int8") }
+	case []float64:
+		if !(gt == Float64Group) { return f("[]float64") }
+	case []float32:
+		if !(gt == Float32Group || gt == FloatGroup) { return f("[]float32") }
+	}
+	return nil
+}
 
 var fixedSizeBytes = []int{
 	8, 4, 2, 1, 8, 4, 2, 1, 8, 4, 
