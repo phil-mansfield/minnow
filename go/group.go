@@ -5,7 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"github.com/phil-mansfield/minnow/bit"
+	"github.com/phil-mansfield/minnow/go/bit"
 )
 
 const (

@@ -189,7 +189,7 @@ func readQFloatRecord(fname string) (x1, x2 [][]float32) {
 }
 
 func TestInt64Record(t *testing.T) {
-	fname := "test_files/int_record.test"
+	fname := "../test_files/int_record.test"
 	xs := [][]int64{
 		[]int64{1, 2, 3, 4},
 		[]int64{5},
@@ -220,7 +220,7 @@ func TestInt64Record(t *testing.T) {
 
 
 func TestGroupRecord(t *testing.T) {
-	fname := "test_files/group_files.test"
+	fname := "../test_files/group_files.test"
 	ix := make([]int32, 20)
 	fx := make([]float64, 10)
 	for i := range ix { ix[i] = int32(i) }
@@ -240,7 +240,7 @@ func TestGroupRecord(t *testing.T) {
 }
 
 func TestBitIntRecord(t *testing.T) {
-	fname := "test_files/bit_int_record.test"
+	fname := "../test_files/bit_int_record.test"
 	x1 := []int64{100, 101, 102, 104}
 	x2 := [][]int64{[]int64{1024, 1024, 1024}, []int64{0, 1023, 500}}
 	x3 := []int64{-1000000, -500000}
@@ -268,7 +268,7 @@ func TestBitIntRecord(t *testing.T) {
 }
 
 func TestQFloatRecord(t *testing.T) {
-	fname := "test_files/q_float_record.test"
+	fname := "../test_files/q_float_record.test"
 	limit := [2]float32{-50, 100}
 	dx1, dx2 := float32(1.0), float32(10.0)
 	x1 := [][]float32{

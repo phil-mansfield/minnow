@@ -4,11 +4,11 @@ import (
 	"math"
 	"testing"
 
-	"github.com/phil-mansfield/minnow"
+	minnow "github.com/phil-mansfield/minnow/go"
 )
 
 func TestReaderWriter(t *testing.T) {
-	fname := "../test_files/reader_writer_minh.test"
+	fname := "../../test_files/reader_writer_minh.test"
 	
 	names := []string{
 		"int64", "float32", "int", "float", "log",

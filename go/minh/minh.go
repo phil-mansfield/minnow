@@ -7,7 +7,7 @@ import (
 	"math"
 	"runtime"
 	
-	"github.com/phil-mansfield/minnow"
+	minnow "github.com/phil-mansfield/minnow/go"
 
 	"unsafe"
 )
