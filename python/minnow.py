@@ -29,6 +29,21 @@ float_group = 11
 
 _py_open = open
 
+def type_match(col_type, arr):
+    if col_type == int64_group: return arr.dtype == np.int64
+    if col_type == int32_group: return arr.dtype == np.int32
+    if col_type == int16_group: return arr.dtype == np.int16
+    if col_type == int8_group: return arr.dtype == np.int8
+    if col_type == uint64_group: return arr.dtype == np.uint64
+    if col_type == uint32_group: return arr.dtype == np.uint32
+    if col_type == uint16_group: return arr.dtype == np.uint16
+    if col_type == uint8_group: return arr.dtype == np.uint8
+    if col_type == float64_group: return arr.dtype == np.float64
+    if col_type == float32_group: return arr.dtype == np.float32
+    if col_type == int_group: return arr.dtype == np.int64
+    if col_type == float_group: return arr.dtype == np.float32
+    assert(0)
+
 def create(fname): return Writer(fname)
 
 def open(fname): return Reader(fname)
@@ -60,8 +75,10 @@ class Writer(object):
     def int_group(self, N):
         self._new_group(_IntGroup(self.blocks, N))
 
-    def float_group(self, N):
-        self._new_group(_FloatGroup(self.blocks, N))
+    def float_group(self, N, lim, dx):
+        low, high = lim
+        pixels = int(np.ceil((high - low) / dx))
+        self._new_group(_FloatGroup(self.blocks, N, low, high, pixels, True))
 
     def _new_group(self, g):
         self.writers.append(g)
@@ -331,7 +348,7 @@ class _FloatGroup(_Group, _BlockIndex):
 
     def write_data(self, f, x):
         dx = (self.high - self.low) / self.pixels
-        quant = np.asarray(np.floor((x - self.low) / dx), dtype=uint64)
+        quant = np.asarray(np.floor((x - self.low) / dx), dtype=np.uint64)
         if self.periodic:
             min = bit.periodic_min(quant, self.pixels)
             bound(quant, min, self.pixels)
@@ -340,9 +357,9 @@ class _FloatGroup(_Group, _BlockIndex):
 
     def write_tail(self, f):
         self.ig.write_tail(f)
-        f.write(struct.pack("<ffqc", self.low, self.high,
+        f.write(struct.pack("<ffqB", self.low, self.high,
                             self.pixels, self.periodic))
-
+        
     def read_data(self, f, b):
         quant = self.ig.read_data(f, b)
         if self.periodic: bound(quant, 0, self.pixels)
@@ -367,7 +384,7 @@ def _new_float_group_from_tail(f):
 
 def bound(x, min, pixels):
     x[x < min] += pixels
-    x[x > min + pixels] -= pizels
+    x[x > min + pixels] -= pixels
     
     
     

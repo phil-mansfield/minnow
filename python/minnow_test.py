@@ -2,6 +2,7 @@ from __future__ import division, print_function
 
 import numpy as np
 import minnow
+import minh
 import struct
 import bit
 import time
@@ -228,7 +229,59 @@ def test_periodic_min():
 
 def test_minh_reader_writer():
     fname = "../../test_files/reader_writer_minh.test"
-    names = ["int64", ""]
+    names = ["int64", "flaot32", "int", "float", "log"]
+    text = ("Cats are the best. Don't we love them?!@#$%^&*(),.." +
+            "..[]{};':\"|\\/-=_+`~meow meow meow")
+    columns = [
+        minh.Column(minnow.int64_group),
+        minh.Column(minnow.float32_group),
+        minh.Column(minnow.int_group),
+        minh.Column(minnow.float_group, 0, 100, 200, 1),
+        minh.Column(minnow.float_group, 1, 10, 14, 0.01)
+    ]
+
+    block1 = [
+        [100, 200, 300, 400, 500],
+        [150, 250, 350, 450, 550],
+        [-20, -35, -25, -10, -20],
+        [100, 200, 125, 150, 100],
+        [1e10, 1e11, 1e11, 1e11, 1e14, 3e13]
+    ]
+
+    block2 = [
+        [125, 225, 325],
+        [1750, 2750, 3750],
+        [1000, 1000, 1000],
+        [100, 100, 100],
+        [1e14, 1e14, 1e14]
+    ]
+
+    joined_blocks = [block1[i] + block2[i] for i in range(5)]
+    blocks = [block1, block2]
+
+    #wr = minh.create(fname)
+    #wr.header(names, text, columns)
+    #for _, block in blocks: wr.block(block)
+    #wr.close()
+
+    blocks += [joined_blocks]
+
+    rd = open(fname)
+
+    assert(rd.names == names)
+    assert(rd.text == test)
+    assert(rd.blocks == 2)
+    assert(rd.length == 8)
+    for i in range(rd.blocks):
+        assert(rd.block_lengths[i] == [5, 3][i])
+    for i in range(len(columns)):
+        assert(columns_eq(columns[i], rd.columns[i]))
+
+def column_eq(c1, c2):
+    return (c1.type == c2.type and c1.log == c2.log and 
+            eps_eq(c1.dx, c2.dx, 1e-5) and
+            eps_eq(c1.low, c2.low, 1e-5) and
+            eps_eq(c1.high, c2.high, 1e-5))
 
 if __name__ == "__main__":
     test_int_record()
@@ -236,6 +289,6 @@ if __name__ == "__main__":
     test_bit_array()
     test_periodic_min()
     test_bit_int_record()
-    #test_q_float_record()
+    test_q_float_record()
 
     #bench_bit_array()
