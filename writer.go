@@ -2,6 +2,7 @@ package minnow
 
 import (
 	"encoding/binary"
+	"math"
 	"os"
 )
 
@@ -69,7 +70,7 @@ func (wr *Writer) IntGroup(N int) {
 // of dx. lim gives the lower and upper limits for the the data set. The data is
 // assumed to be periodic.
 func (wr *Writer) FloatGroup(N int, lim [2]float32, dx float32) {
-	pixels := int64((lim[1] - lim[0]) / dx)
+	pixels := int64((math.Ceil(float64((lim[1] - lim[0]) / dx))))
 	wr.newGroup(newFloatGroup(wr.blocks, N, lim[0], lim[1], pixels, true))
 }
 
