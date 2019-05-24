@@ -42,7 +42,7 @@ var (
 
 func TypeMatch(x interface{}, gt int64) error {
 	f := func(s string) error {
-		return fmt.Errorf("Got type %s for group %d.", s, groupNames[gt])
+		return fmt.Errorf("Got type %s for group %s.", s, groupNames[gt])
 	}
 	switch v := x.(type) {
 	case []int64:
@@ -92,14 +92,14 @@ var (
 
 func groupFromTail(f *os.File, gt int64) group {
 	switch {
-	case gt >= Int64Group && gt <= Float64Group:
+	case gt >= Int64Group && gt <= Float32Group:
 		return newFixedSizeGroupFromTail(f, gt)
 	case gt == IntGroup:
 		return newIntGroupFromTail(f)
 	case gt == FloatGroup:
 		return newFloatGroupFromTail(f)
 	}
-	panic("Unrecognized group type.")
+	panic(fmt.Sprintf("Unrecognized group type, %d.", gt))
 }
 
 ////////////////////
