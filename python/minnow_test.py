@@ -156,6 +156,18 @@ def test_bit_int_record():
     assert(np.all(rd_x2[1] == x2[1]))
     assert(np.all(rd_x3 == x3))
 
+def create_q_float_record(fname, limit, dx1, dx2, x1, x2):
+    f = minnow.create(fname)
+
+    f.header(struct.pack("<ffffqq", dx1, dx2, limit[0], limit[1],
+                         len(x1), len(x2)))
+    f.float_group(len(x1[0]), limit, dx1)
+    for i in range(len(x1)): f.data(x1[i])
+    f.float_group(len(x2[0]), limit, dx2)
+    for i in range(len(x2)): f.data(x2[i])
+
+    f.close()
+
 def open_q_float_record(fname):
     f = minnow.open(fname)
     
@@ -184,7 +196,7 @@ def test_q_float_record():
         np.array([0, 20, 0, 20, 0])
     ]
 
-    #create_q_float_record(name, limit, dx1, dx2, x1, x2)
+    create_q_float_record(fname, limit, dx1, dx2, x1, x2)
     rd_x1, rd_x2 = open_q_float_record(fname)
 
     assert(len(x1) == len(rd_x1))
@@ -199,11 +211,31 @@ def test_q_float_record():
 
 def eps_eq(x, y, eps): return (x + eps > y) & (x - eps < y)
 
+def test_periodic_min():
+    pixels = 20
+    data = [
+        [0, 1, 2, 3],
+        [10, 11, 12, 13],
+        [18, 19, 0, 1],
+        [1, 0, 19, 18],
+        [1, 19, 18, 0],
+    ]
+    mins = [0, 10, 18, 18, 18]
+
+    for i in range(len(data)):
+        min = bit.periodic_min(data[i], pixels)
+        assert(min == mins[i])
+
+def test_minh_reader_writer():
+    fname = "../../test_files/reader_writer_minh.test"
+    names = ["int64", ""]
+
 if __name__ == "__main__":
     test_int_record()
     test_group_record()
     test_bit_array()
+    test_periodic_min()
     test_bit_int_record()
-    test_q_float_record()
+    #test_q_float_record()
 
     #bench_bit_array()

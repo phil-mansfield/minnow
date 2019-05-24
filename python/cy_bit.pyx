@@ -96,8 +96,9 @@ def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
     return np.array(out)
 
 def periodic_min(np.int64_t[:] x, np.int64_t pixels):
-    x0, width = x[0], 1
-    cdef np.int64_t N = pixels
+    cdef np.int64_t x0 = x[0]
+    cdef np.int64_t width = 1
+    cdef np.int64_t N = len(x)
 
     cdef np.int64_t xi, x1, d0, d1
     for i in range(N):
@@ -119,6 +120,7 @@ def periodic_min(np.int64_t[:] x, np.int64_t pixels):
 
         if width > pixels/2: return 0
 
+    return x0
 
 cdef np.int64_t periodic_distance(
     np.int64_t x, np.int64_t x0, np.int64_t pixels

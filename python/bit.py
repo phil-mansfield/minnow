@@ -26,4 +26,4 @@ def read_array(f, bits, length):
     return from_array(np.array(buf, dtype=np.uint8), bits, length)
 
 def periodic_min(x, pixels):
-    return cy_bit.array(np.asarray(x, dtype=np.int64), np.int64(pixels))
+    return cy_bit.periodic_min(np.asarray(x, dtype=np.int64), np.int64(pixels))
