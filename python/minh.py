@@ -45,7 +45,7 @@ class Writer(object):
         self.f.header(text)
         
         bin_cols = np.zeros(len(cols), dtype=_column_type)
-        for i in range(cols):
+        for i in range(len(cols)):
             bin_cols["type"][i] = cols[i].type
             bin_cols["log"][i] = cols[i].log
             bin_cols["low"][i] = cols[i].low
@@ -56,14 +56,14 @@ class Writer(object):
 
     def block(self, cols):
         assert(len(cols) == len(self.cols))
-        for i in range(cols):
-            assert(type_match(self.cols[i].type, cols[i]))
+        for i in range(len(cols)):
+            assert(minnow.type_match(self.cols[i].type, cols[i]))
 
         self.block_sizes.append(len(cols[0]))
         self.blocks += 1
 
         for i in range(len(cols)):
-            assert(len(cols) == len(cols[0]))
+            assert(len(cols[i]) == len(cols[0]))
             col_type = self.cols[i].type
 
             if (col_type >= minnow.int64_group and
@@ -73,18 +73,20 @@ class Writer(object):
             elif col_type == minnow.int_group:
                 self.f.int_group(len(cols[i]))
                 self.f.data(cols[i])
-            elif col_typ == minnow.float_group:
+            elif col_type == minnow.float_group:
                 lim = (self.cols[i].low, self.cols[i].high)
                 buf = np.asarray(np.copy(cols[i]), dtype=np.float32)
-                if cols[i].log: np.log10(buf, out=buf)
-                buf[buf > cols[i].high] = np.nextafter(cols[i].high, -np.inf)
-                buf[buf < cols[i].low] = cols[i].low
+                if self.cols[i].log: np.log10(buf, out=buf)
+                buf[buf >= self.cols[i].high] = np.nextafter(
+                    self.cols[i].high, np.float32(-np.inf), dtype=np.float32
+                )
+                buf[buf < self.cols[i].low] = self.cols[i].low
                 
                 self.f.float_group(len(cols[i]), lim, self.cols[i].dx)
                 self.f.data(buf)
             
     def close(self):
-        self.f.header(stuct.pack("<q", self.blocks))
+        self.f.header(struct.pack("<q", self.blocks))
         self.f.header(np.array(self.block_sizes, dtype=np.int64))
         self.f.close()
 

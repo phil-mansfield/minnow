@@ -63,7 +63,7 @@ def read_group_record(fname):
         xf[i*nf: (i+1)*nf] = f.data(i + bi)
 
     return xi, xf, text
-
+    
 def test_int_record():
     fname = "../test_files/int_record.test"
     xs = [np.array([1, 2, 3, 4], dtype=np.int64),
@@ -259,10 +259,10 @@ def test_minh_reader_writer():
     joined_blocks = [np.hstack([block1[i], block2[i]]) for i in range(5)]
     blocks = [block1, block2]
 
-    #wr = minh.create(fname)
-    #wr.header(names, text, columns)
-    #for _, block in blocks: wr.block(block)
-    #wr.close()
+    wr = minh.create(fname)
+    wr.header(names, text, columns)
+    for block in blocks: wr.block(block)
+    wr.close()
 
     blocks += [joined_blocks]
 
@@ -287,8 +287,6 @@ def test_minh_reader_writer():
         assert(len(rd_int64) == len(block[0]))
         assert(np.all(rd_int64 == block[0]))
 
-        print("   ", rd_float32)
-        print("   ", block[1])
         assert(len(rd_float32) == len(block[1]))
         assert(np.all(eps_eq(rd_float32, block[1], 1e-3)))
 

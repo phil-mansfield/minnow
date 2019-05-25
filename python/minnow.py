@@ -69,7 +69,10 @@ class Writer(object):
         return self.headers/ - 1
 
     def fixed_size_group(self, dtype, N):
-        group_type = _fixed_size_type_dict[dtype]
+        if type(dtype) == type:
+            group_type = _fixed_size_type_dict[dtype]
+        else:
+            group_type = dtype
         self._new_group(_FixedSizeGroup(self.blocks, N, group_type))
 
     def int_group(self, N):
@@ -145,7 +148,6 @@ class Reader(object):
     def header(self, i, data_type):
         self.f.seek(self.header_offsets[i], 0)
         b = self.f.read(self.header_sizes[i])
-
         if type(data_type) == type or type(data_type) == np.dtype:
             dtype = np.dtype(data_type).newbyteorder("<")
             data = np.frombuffer(b, dtype=dtype)
