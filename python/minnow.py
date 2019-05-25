@@ -146,17 +146,17 @@ class Reader(object):
         self.f.seek(self.header_offsets[i], 0)
         b = self.f.read(self.header_sizes[i])
 
-        if data_type == "s":
-            return b.decode("ascii")
-        elif type(data_type) == str:
-            data = struct.unpack("<" + data_type, b)
+        if type(data_type) == type or type(data_type) == np.dtype:
+            dtype = np.dtype(data_type).newbyteorder("<")
+            data = np.frombuffer(b, dtype=dtype)
             if len(data) == 1:
                 return data[0]
             else:
                 return data
-        elif type(data_type) == type:
-            dtype = np.dtype(data_type).newbyteorder("<")
-            data = np.frombuffer(b, dtype=dtype)
+        elif data_type == "s":
+            return b.decode("ascii")
+        elif type(data_type) == str:
+            data = struct.unpack("<" + data_type, b)
             if len(data) == 1:
                 return data[0]
             else:
@@ -191,7 +191,7 @@ class _Group:
     def read_data(self, f, b): pass
 
 def _group_from_tail(f, gt):
-    if gt >= int64_group and gt <= float64_group:
+    if gt >= int64_group and gt <= float32_group:
         return _new_fixed_size_group_from_tail(f, gt)
     elif gt == int_group:
         return _new_int_group_from_tail(f)
@@ -312,7 +312,8 @@ class _IntGroup(_Group, _BlockIndex):
     def read_data(self, f, b):
         b_idx = b - self.start_block
         bits, min = self.bits[b_idx], self.mins[b_idx]
-        return bit.read_array(f, bits, self.N) + min
+        b_array =  bit.read_array(f, bits, self.N)
+        return np.asarray(b_array, dtype=np.int64) + min
 
     def block_offset(self, b):
         return _BlockIndex.block_offset(self, b)
@@ -327,7 +328,7 @@ def _new_int_group_from_tail(f):
     def read():
         min, bits = struct.unpack("<qq", f.read(2*8))
         out = bit.read_array(f, bits, blocks)
-        return out + min
+        return np.asarray(out, dtype=np.int64) + min
     
     g.mins = read()
     g.bits = read()
@@ -359,7 +360,7 @@ class _FloatGroup(_Group, _BlockIndex):
         self.ig.write_tail(f)
         f.write(struct.pack("<ffqB", self.low, self.high,
                             self.pixels, self.periodic))
-        
+    
     def read_data(self, f, b):
         quant = self.ig.read_data(f, b)
         if self.periodic: bound(quant, 0, self.pixels)
@@ -379,12 +380,12 @@ def _new_float_group_from_tail(f):
     g.low, g.high, g.pixels, g.periodic = struct.unpack(
         "<ffqc", f.read(2*4 + 8 + 1)
     )
-    g.periodic = g.periodic == 0
+    g.periodic = g.periodic != 0
     return g
 
 def bound(x, min, pixels):
     x[x < min] += pixels
-    x[x > min + pixels] -= pixels
+    x[x >= min + pixels] -= pixels
     
     
     

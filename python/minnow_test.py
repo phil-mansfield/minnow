@@ -228,8 +228,8 @@ def test_periodic_min():
         assert(min == mins[i])
 
 def test_minh_reader_writer():
-    fname = "../../test_files/reader_writer_minh.test"
-    names = ["int64", "flaot32", "int", "float", "log"]
+    fname = "../test_files/reader_writer_minh.test"
+    names = ["int64", "float32", "int", "float", "log"]
     text = ("Cats are the best. Don't we love them?!@#$%^&*(),.." +
             "..[]{};':\"|\\/-=_+`~meow meow meow")
     columns = [
@@ -241,22 +241,22 @@ def test_minh_reader_writer():
     ]
 
     block1 = [
-        [100, 200, 300, 400, 500],
-        [150, 250, 350, 450, 550],
-        [-20, -35, -25, -10, -20],
-        [100, 200, 125, 150, 100],
-        [1e10, 1e11, 1e11, 1e11, 1e14, 3e13]
+        np.array([100, 200, 300, 400, 500], dtype=np.int64),
+        np.array([150, 250, 350, 450, 550], dtype=np.float32),
+        np.array([-30, -35, -25, -10, -20], dtype=np.int64),
+        np.array([100, 200, 125, 150, 100], dtype=np.float32),
+        np.array([1e10, 1e11, 1e11, 1e14, 3e13], dtype=np.float32)
     ]
 
     block2 = [
-        [125, 225, 325],
-        [1750, 2750, 3750],
-        [1000, 1000, 1000],
-        [100, 100, 100],
-        [1e14, 1e14, 1e14]
+        np.array([125, 225, 325], dtype=np.int64),
+        np.array([1750, 2750, 3750], dtype=np.float32),
+        np.array([1000, 1000, 1000], dtype=np.int64),
+        np.array([100, 100, 100], dtype=np.float32),
+        np.array([1e14, 1e14, 1e14], dtype=np.float32)
     ]
 
-    joined_blocks = [block1[i] + block2[i] for i in range(5)]
+    joined_blocks = [np.hstack([block1[i], block2[i]]) for i in range(5)]
     blocks = [block1, block2]
 
     #wr = minh.create(fname)
@@ -266,16 +266,40 @@ def test_minh_reader_writer():
 
     blocks += [joined_blocks]
 
-    rd = open(fname)
+    rd = minh.open(fname)
 
     assert(rd.names == names)
-    assert(rd.text == test)
+    assert(rd.text == text)
     assert(rd.blocks == 2)
     assert(rd.length == 8)
     for i in range(rd.blocks):
         assert(rd.block_lengths[i] == [5, 3][i])
     for i in range(len(columns)):
-        assert(columns_eq(columns[i], rd.columns[i]))
+        assert(column_eq(columns[i], rd.columns[i]))
+
+    for b in range(len(blocks)):
+        block = blocks[b]
+        if b < 2:
+            rd_int64, rd_float32, rd_int, rd_float, rd_log = rd.block(b, names)
+        else:
+            rd_int64, rd_float32, rd_int, rd_float, rd_log = rd.read(names)
+
+        assert(len(rd_int64) == len(block[0]))
+        assert(np.all(rd_int64 == block[0]))
+
+        print("   ", rd_float32)
+        print("   ", block[1])
+        assert(len(rd_float32) == len(block[1]))
+        assert(np.all(eps_eq(rd_float32, block[1], 1e-3)))
+
+        assert(len(rd_int) == len(block[2]))
+        assert(np.all(rd_int == block[2]))
+
+        assert(len(rd_float) == len(block[3]))
+        assert(np.all(eps_eq(rd_float, block[3], 1)))
+
+        assert(len(rd_log) == len(block[4]))
+        assert(np.all(eps_eq(np.log10(rd_log), np.log10(block[4]), 0.01)))
 
 def column_eq(c1, c2):
     return (c1.type == c2.type and c1.log == c2.log and 
@@ -290,5 +314,6 @@ if __name__ == "__main__":
     test_periodic_min()
     test_bit_int_record()
     test_q_float_record()
+    test_minh_reader_writer()
 
     #bench_bit_array()

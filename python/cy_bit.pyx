@@ -95,6 +95,9 @@ def from_array(np.uint8_t[:] arr, np.uint64_t bits, np.uint64_t length):
 
     return np.array(out)
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 def periodic_min(np.int64_t[:] x, np.int64_t pixels):
     cdef np.int64_t x0 = x[0]
     cdef np.int64_t width = 1
@@ -122,6 +125,9 @@ def periodic_min(np.int64_t[:] x, np.int64_t pixels):
 
     return x0
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.cdivision(True)
 cdef np.int64_t periodic_distance(
     np.int64_t x, np.int64_t x0, np.int64_t pixels
 ):
