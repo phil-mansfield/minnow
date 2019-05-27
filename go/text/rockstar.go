@@ -16,9 +16,9 @@ func OpenRockstar(fname string, configOpt ...ReaderConfig) *Rockstar {
 func (r *Rockstar) Names() []string {
 	firstLine := r.rd.LineHeader(1)
 	if strings.Contains(firstLine, "(0)") {
-		return rockstarNames(firstLine)
-	} else {
 		return consistentTreesNames(firstLine)
+	} else {
+		return rockstarNames(firstLine)
 	}
 }
 
