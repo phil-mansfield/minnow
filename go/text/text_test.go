@@ -169,3 +169,38 @@ func TestNextBlock(t *testing.T) {
 		}
 	}
 }
+
+func TestRockstarHeader(t *testing.T) {
+	rockstarLine := "#ID DescID Mvir Vmax Vrms Rvir Rs Np X Y Z VX VY VZ JX JY JZ Spin rs_klypin Mvir_all M200b M200c M500c M2500c Xoff Voff spin_bullock b_to_a c_to_a A[x] A[y] A[z] b_to_a(500c) c_to_a(500c) A[x](500c) A[y](500c) A[z](500c) T/|U| M_pe_Behroozi M_pe_Diemer Halfmass_Radius rvmax PID"
+	consistentTreesLine := "#scale(0) id(1) desc_scale(2) desc_id(3) num_prog(4) pid(5) upid(6) desc_pid(7) phantom(8) sam_Mvir(9) Mvir(10) Rvir(11) rs(12) vrms(13) mmp?(14) scale_of_last_MM(15) vmax(16) x(17) y(18) z(19) vx(20) vy(21) vz(22) Jx(23) Jy(24) Jz(25) Spin(26) Breadth_first_ID(27) Depth_first_ID(28) Tree_root_ID(29) Orig_halo_ID(30) Snap_num(31) Next_coprogenitor_depthfirst_ID(32) Last_progenitor_depthfirst_ID(33) Last_mainleaf_depthfirst_ID(34) Tidal_Force(35) Tidal_ID(36) Rs_Klypin(37) Mmvir_all(38) M200b(39) M200c(40) M500c(41) M2500c(42) Xoff(43) Voff(44) Spin_Bullock(45) b_to_a(46) c_to_a(47) A[x](48) A[y](49) A[z](50) b_to_a(500c)(51) c_to_a(500c)(52) A[x](500c)(53) A[y](500c)(54) A[z](500c)(55) T/|U|(56) M_pe_Behroozi(57) M_pe_Diemer(58) Halfmass_Radius(59) Macc(60) Mpeak(61) Vacc(62) Vpeak(63) Halfmass_Scale(64) Acc_Rate_Inst(65) Acc_Rate_100Myr(66) Acc_Rate_1*Tdyn(67) Acc_Rate_2*Tdyn(68) Acc_Rate_Mpeak(69) Acc_Log_Vmax_Inst(70) Acc_Log_Vmax_1*Tdyn(71) Mpeak_Scale(72) Acc_Scale(73) First_Acc_Scale(74) First_Acc_Mvir(75) First_Acc_Vmax(76) Vmax\\@Mpeak(77) Tidal_Force_Tdyn(78) Log_(Vmax/Vmax_max(Tdyn;Tmpeak))(79) Time_to_future_merger(80) Future_merger_MMP_ID(81)"
+
+	rockstarExp := []string{ "ID", "DescID", "Mvir", "Vmax", "Vrms", "Rvir", "Rs", "Np", "X", "Y", "Z", "VX", "VY", "VZ", "JX", "JY", "JZ", "Spin", "rs_klypin", "Mvir_all", "M200b", "M200c", "M500c", "M2500c", "Xoff", "Voff", "spin_bullock", "b_to_a", "c_to_a", "A[x]", "A[y]", "A[z]", "b_to_a(500c)", "c_to_a(500c)", "A[x](500c)", "A[y](500c)", "A[z](500c)", "T/|U|", "M_pe_Behroozi", "M_pe_Diemer", "Halfmass_Radius", "rvmax", "PID" }
+	consistentTreesExp := []string{ "scale", "id", "desc_scale", "desc_id", "num_prog", "pid", "upid", "desc_pid", "phantom", "sam_Mvir", "Mvir", "Rvir", "rs", "vrms", "mmp?", "scale_of_last_MM", "vmax", "x", "y", "z", "vx", "vy", "vz", "Jx", "Jy", "Jz", "Spin", "Breadth_first_ID", "Depth_first_ID", "Tree_root_ID", "Orig_halo_ID", "Snap_num", "Next_coprogenitor_depthfirst_ID", "Last_progenitor_depthfirst_ID", "Last_mainleaf_depthfirst_ID", "Tidal_Force", "Tidal_ID", "Rs_Klypin", "Mmvir_all", "M200b", "M200c", "M500c", "M2500c", "Xoff", "Voff", "Spin_Bullock", "b_to_a", "c_to_a", "A[x]", "A[y]", "A[z]", "b_to_a(500c)", "c_to_a(500c)", "A[x](500c)", "A[y](500c)", "A[z](500c)", "T/|U|", "M_pe_Behroozi", "M_pe_Diemer", "Halfmass_Radius", "Macc", "Mpeak", "Vacc", "Vpeak", "Halfmass_Scale", "Acc_Rate_Inst", "Acc_Rate_100Myr", "Acc_Rate_1*Tdyn", "Acc_Rate_2*Tdyn", "Acc_Rate_Mpeak", "Acc_Log_Vmax_Inst", "Acc_Log_Vmax_1*Tdyn", "Mpeak_Scale", "Acc_Scale", "First_Acc_Scale", "First_Acc_Mvir", "First_Acc_Vmax", "Vmax\\@Mpeak", "Tidal_Force_Tdyn", "Log_(Vmax/Vmax_max(Tdyn;Tmpeak))", "Time_to_future_merger", "Future_merger_MMP_ID" }
+
+	rockstarRes := rockstarNames(rockstarLine)
+	consistentTreesRes := consistentTreesNames(consistentTreesLine)
+
+	if len(rockstarRes) != len(rockstarExp) {
+		t.Errorf("Expected len(rockstar) = %d, but got %d",
+			len(rockstarExp), len(rockstarRes))
+	}
+
+	if len(consistentTreesRes) != len(consistentTreesExp) {
+		t.Errorf("Expected len(consistentTrees) = %d, but got %d",
+			len(consistentTreesExp), len(consistentTreesRes))
+	}
+
+	for i := range rockstarRes {
+		if rockstarRes[i] != rockstarExp[i] {
+			t.Errorf("Expected rockstar[%d] = %s, but got %s.",
+				rockstarExp[i], i, rockstarRes[i])
+		}
+	}
+
+	for i := range consistentTreesRes {
+		if consistentTreesRes[i] != consistentTreesExp[i] {
+			t.Errorf("Expected consistentTrees[%d] = %s, but got %s.",
+				consistentTreesExp[i], i, consistentTreesRes[i])
+		}
+	}
+}
