@@ -22,7 +22,6 @@ type Reader struct {
 }
 
 type ReaderConfig struct {
-	SkipLines int
 	Separator byte
 	Comment   byte
 	MaxBlockSize int64
@@ -30,7 +29,6 @@ type ReaderConfig struct {
 }
 
 var DefaultReaderConfig = ReaderConfig{
-	SkipLines: 0,
 	Separator: byte(' '),
 	Comment: byte('#'),
 	MaxBlockSize:  5 * (1 << 30),
@@ -187,7 +185,7 @@ func (rd *Reader) Block(b int, names []string, out []interface{}) {
 	if err != nil { panic(err.Error()) }
 
 	lines, nComm := split(rd.buf, byte('\n'), rd.config.Comment)
-	lines = uncomment(lines, byte('\n'), nComm)
+	lines = uncomment(lines, rd.config.Comment, nComm)
 	lines = trim(lines, rd.config.Separator)
 
 	for i := range out { out[i] = expandGeneric(out[i], len(lines)) }
