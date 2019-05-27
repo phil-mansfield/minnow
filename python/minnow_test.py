@@ -15,14 +15,14 @@ def create_int_record(fname, text, xs):
     for i in range(len(xs)):
         f.fixed_size_group(np.int64, len(xs[i]))
         f.data(xs[i])
-    f.header(np.array(map(len, xs), dtype=np.int64))
+    f.header(np.array([len(x) for x in xs], dtype=np.int64))
 
     f.close()
 
 def create_group_record(fname, ix, fx, text):
     f = minnow.create(fname)
 
-    ni, nf = len(ix)/4, len(fx)/2
+    ni, nf = len(ix)//4, len(fx)//2
     f.header(struct.pack("<qq", 4, ni))
     f.fixed_size_group(np.int32, ni)
     for i in range(4):
@@ -75,7 +75,7 @@ def test_int_record():
     create_int_record(fname, text, xs)
     rd_text, rd_xs = read_int_record(fname)
 
-    assert(rd_text == text)
+    assert(rd_text == text.decode("ascii"))
     for i in range(len(xs)):
         assert(np.all(xs[i] == rd_xs[i]))
 
@@ -88,7 +88,7 @@ def test_group_record():
     create_group_record(fname, ix, fx, text)
     rd_ix, rd_fx, rd_text = read_group_record(fname)
     
-    assert(text == rd_text)
+    assert(text.decode("ascii") == rd_text)
     assert(np.all(rd_ix == ix))
     assert(np.all(np.abs(fx - rd_fx) < 1e-6))
 

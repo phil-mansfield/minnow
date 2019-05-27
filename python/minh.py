@@ -41,8 +41,8 @@ class Writer(object):
 
     def header(self, names, text, cols):
         self.cols = cols
-        self.f.header("$".join(names))
-        self.f.header(text)
+        self.f.header("$".join(names).encode("ascii"))
+        self.f.header(text.encode("ascii"))
         
         bin_cols = np.zeros(len(cols), dtype=_column_type)
         for i in range(len(cols)):
@@ -98,8 +98,8 @@ class Reader(object):
         assert(magic == MAGIC)
         assert(version == VERSION)
 
-        self.names = self.f.header(1, "s").decode("ascii")
-        self.text = self.f.header(2, "s").decode("ascii")
+        self.names = self.f.header(1, "s")
+        self.text = self.f.header(2, "s")
         raw_columns = self.f.header(3, _column_type)
         self.blocks = self.f.header(4, "q")
         self.block_lengths = self.f.header(5, np.int64)

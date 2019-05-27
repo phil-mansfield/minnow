@@ -50,12 +50,12 @@ def open(fname): return Reader(fname)
 
 class Writer(object):
     def __init__(self, fname):
-        self.f = _py_open(fname, "w+")
+        self.f = _py_open(fname, "w+b")
         self.headers, self.blocks = 0, 0
         self.writers = []
         self.header_offsets, self.header_sizes = [], []
         self.group_blocks, self.group_offsets = [], []
-        self.f.write('\0'*48)
+        self.f.write(b'\0'*48)
 
     def header(self, data):
         if type(data) == np.ndarray:
