@@ -193,14 +193,14 @@ func TestRockstarHeader(t *testing.T) {
 	for i := range rockstarRes {
 		if rockstarRes[i] != rockstarExp[i] {
 			t.Errorf("Expected rockstar[%d] = %s, but got %s.",
-				rockstarExp[i], i, rockstarRes[i])
+				i, rockstarExp[i], rockstarRes[i])
 		}
 	}
 
 	for i := range consistentTreesRes {
 		if consistentTreesRes[i] != consistentTreesExp[i] {
 			t.Errorf("Expected consistentTrees[%d] = %s, but got %s.",
-				consistentTreesExp[i], i, consistentTreesRes[i])
+				i, consistentTreesExp[i], consistentTreesRes[i])
 		}
 	}
 }

@@ -31,7 +31,7 @@ func TestArray(t *testing.T) {
 }
 
 func TestArrayBuffer(t *testing.T) {
-	fname := "../test_files/array_buffer.test"
+	fname := "../../test_files/array_buffer.test"
 	f, err := os.Create(fname)
 	if err != nil { panic(err.Error()) }
 
