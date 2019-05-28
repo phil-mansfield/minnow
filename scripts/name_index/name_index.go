@@ -7,6 +7,7 @@ import (
 )
 
 type Index struct {
+	allNames []string
 	orig, standard []string
 }
 
@@ -24,16 +25,18 @@ func Open(fname string) *Index {
 	
 	lines := clean(strings.Split(text, "\n"))
 
-	orig, standard := []string{}, []string{}
+	orig, standard, all := []string{}, []string{}, []string{}
 	for i := range lines {
 		tok := clean(strings.Split(lines[i], " "))
+		
+		all = append(all, tok[0])
 		for j := range tok {
 			orig = append(orig, tok[j])
 			standard = append(standard, tok[0])
 		}
 	}
 
-	idx := &Index{ orig: orig, standard: standard }
+	idx := &Index{ orig: orig, standard: standard, allNames: all }
 	sort.Sort(idx)
 
 	return idx
@@ -49,6 +52,8 @@ func (idx *Index) Standardize(name string) (std string, inIndex bool) {
 		return idx.standard[i], true
 	}
 }
+
+func (idx *Index) AllNames() []string { return idx.allNames }
 
 func clean(tok []string) []string {
 	for i := range tok {
