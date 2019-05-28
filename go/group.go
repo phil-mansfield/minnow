@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	groupNames = []string{
+	GroupNames = []string{
 		"Int64Group",
 		"Int32Group",
 		"Int16Group",
@@ -42,7 +42,7 @@ var (
 
 func TypeMatch(x interface{}, gt int64) error {
 	f := func(s string) error {
-		return fmt.Errorf("Got type %s for group %s.", s, groupNames[gt])
+		return fmt.Errorf("Got type %s for group %s.", s, GroupNames[gt])
 	}
 	switch v := x.(type) {
 	case []int64:
