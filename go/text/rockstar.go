@@ -9,7 +9,7 @@ type Rockstar struct {
 }
 
 func OpenRockstar(fname string, configOpt ...ReaderConfig) *Rockstar {
-	r := &Rockstar{ rd: Open(fname, DefaultReaderConfig) }
+	r := &Rockstar{ rd: Open(fname, configOpt...) }
 	return r
 }
 
