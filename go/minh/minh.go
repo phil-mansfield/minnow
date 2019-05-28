@@ -18,7 +18,23 @@ const (
 )
 
 const (
-	basicFileType  int64 = iota
+	basicFileType    int64 = iota
+	boundaryFileType
+)
+
+const (
+	Int64 int64 = iota
+	Int32
+	Int16
+	Int8
+	Uint64
+	Uint32
+	Uint16
+	Uint8
+	Float64
+	Float32
+	Int
+	Float
 )
 
 type Writer struct {
@@ -36,8 +52,19 @@ type Column struct {
 	Buffer [232]byte
 }
 
+func (c Column) String() string {
+	return fmt.Sprintf("{Type: %s, Log: %t, Range: (%g %g), Dx: %g}",
+		minnow.GroupNames[c.Type], c.Log != 0, c.Low, c.High, c.Dx)
+}
+func (c Column) GoString() string { return c.String() }
+
 type idHeader struct {
 	Magic, Version, FileType int64
+}
+
+type Boundary struct {
+	L, Boundary float64
+	NCells int64
 }
 
 func Create(fname string) *Writer {
@@ -50,6 +77,7 @@ func Create(fname string) *Writer {
 		f: minnow.Create(fname),
 	}
 	wr.f.Header(idHeader{ Magic, Version, basicFileType })
+	wr.f.Header(Boundary{ })
 	return wr
 }
 
@@ -139,8 +167,10 @@ type Reader struct {
 	Columns []Column
 	Blocks, Length int
 	BlockLengths []int
+	Boundary *Boundary
 
 	f *minnow.Reader
+	fileType int64
 }
 
 func Open(fname string) *Reader {
@@ -156,25 +186,29 @@ func Open(fname string) *Reader {
 			"is version %d.", fname, hd.Version, Version))
 	}
 
-	byteNames := make([]byte, f.HeaderSize(1))
-	byteText := make([]byte, f.HeaderSize(2))
-	cols := make([]Column, f.HeaderSize(3)/int(unsafe.Sizeof(Column{})))
+	boundary := &Boundary{ }
+	byteNames := make([]byte, f.HeaderSize(2))
+	byteText := make([]byte, f.HeaderSize(3))
+	cols := make([]Column, f.HeaderSize(4)/int(unsafe.Sizeof(Column{})))
 	i64Blocks := int64(0)
-	i64BlockLengths := make([]int64, f.HeaderSize(5) / 8)
-
-	f.Header(1, byteNames)
-	f.Header(2, byteText)
-	f.Header(3, cols)
-	f.Header(4, &i64Blocks)
-	f.Header(5, i64BlockLengths)
+	i64BlockLengths := make([]int64, f.HeaderSize(6) / 8)
+	
+	f.Header(1, boundary)
+	f.Header(2, byteNames)
+	f.Header(3, byteText)
+	f.Header(4, cols)
+	f.Header(5, &i64Blocks)
+	f.Header(6, i64BlockLengths)
 	
 	minh := &Reader{
 		f: f,
+		fileType: hd.FileType,
 		Names: strings.Split(string(byteNames), "$"),
 		Text: string(byteText),
 		Columns: cols,
 		Blocks: int(i64Blocks),
 		BlockLengths: make([]int, len(i64BlockLengths)),
+		Boundary: boundary,
 	}
 
 	for i := 0; i < len(i64BlockLengths); i++ {
@@ -231,8 +265,14 @@ func (rd *Reader) IntBlock(b int, out map[string][]int64) {
 				"len(out[%s]) = %d", rd.BlockLengths[b], b, name, len(arr)))
 		}
 
+		var idx int
 		c := findName(name, rd.Names)
-		idx := c + b*len(rd.Columns)
+		if rd.fileType == basicFileType {
+			idx = c + b*len(rd.Columns)
+		} else {
+			idx = c*rd.Blocks + b
+		}
+
 		if err := minnow.TypeMatch(arr, rd.Columns[c].Type); err != nil {
 			panic(fmt.Sprintf("Column '%s': %s", name, err.Error()))
 		}
@@ -249,7 +289,13 @@ func (rd *Reader) FloatBlock(b int, out map[string][]float32) {
 		arr = expandFloat32(arr, rd.BlockLengths[b])
 
 		c := findName(name, rd.Names)
-		idx := c + b*len(rd.Columns)
+		var idx int
+		if rd.fileType == basicFileType {
+			idx = c + b*len(rd.Columns)
+		} else {
+			idx = c*rd.Blocks + b
+		}
+
 		if err := minnow.TypeMatch(arr, rd.Columns[c].Type); err != nil {
 			panic(fmt.Sprintf("Column '%s': %s", name, err.Error()))
 		}
