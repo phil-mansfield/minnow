@@ -70,17 +70,20 @@ type geometry struct {
 }
 
 func Create(fname string) *Writer {
+	wr := &Writer{ }
+	wr.create(basicFileType)
+	return wr
+}
+
+func (wr *Writer) create(fileType int64) {
 	if unsafe.Sizeof(Column{}) != 256 {
 		panic(fmt.Sprintf("Sizeof(Column{}) = %d, not 256. Change buffer size.",
 			unsafe.Sizeof(Column{})))
 	}
 
-	wr := &Writer{
-		f: minnow.Create(fname),
-	}
+	wr.f =  minnow.Create(fname),
 	wr.f.Header(idHeader{ Magic, Version, basicFileType })
-	wr.f.Header(Boundary{ })
-	return wr
+	wr.f.Header(Boundary{ })	
 }
 
 func (minh *Writer) Header(names []string, text string, cols []Column) {
