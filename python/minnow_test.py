@@ -232,6 +232,7 @@ def test_minh_reader_writer():
     names = ["int64", "float32", "int", "float", "log"]
     text = ("Cats are the best. Don't we love them?!@#$%^&*(),.." +
             "..[]{};':\"|\\/-=_+`~meow meow meow")
+    cells, boundary, L = 4, 10.0, 100.0
     columns = [
         minh.Column(minnow.int64_group),
         minh.Column(minnow.float32_group),
@@ -261,6 +262,7 @@ def test_minh_reader_writer():
 
     wr = minh.create(fname)
     wr.header(names, text, columns)
+    wr.geometry(L, boundary, cells)
     for block in blocks: wr.block(block)
     wr.close()
 
@@ -272,6 +274,9 @@ def test_minh_reader_writer():
     assert(rd.text == text)
     assert(rd.blocks == 2)
     assert(rd.length == 8)
+    assert(rd.cells == 4)
+    assert(rd.boundary == 10.0)
+    assert(rd.L == 100.0)
     for i in range(rd.blocks):
         assert(rd.block_lengths[i] == [5, 3][i])
     for i in range(len(columns)):

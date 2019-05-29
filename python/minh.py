@@ -9,6 +9,8 @@ MAGIC = 0xbaff1ed
 VERSION = 0
 
 _basic_file_type = 0
+_boundary_file_type = 1
+
 _column_buf_size = 232
 _column_type = np.dtype([
     ("type", np.int64),
@@ -54,6 +56,9 @@ class Writer(object):
         
         self.f.header(bin_cols)
 
+    def geometry(self, L, boundary, cells):
+        self.L, self.boundary, self.cells = L, boundary, cells
+
     def block(self, cols):
         assert(len(cols) == len(self.cols))
         for i in range(len(cols)):
@@ -86,6 +91,7 @@ class Writer(object):
                 self.f.data(buf)
             
     def close(self):
+        self.f.header(struct.pack("<ffq", self.L, self.boundary, self.cells))
         self.f.header(struct.pack("<q", self.blocks))
         self.f.header(np.array(self.block_sizes, dtype=np.int64))
         self.f.close()
@@ -94,15 +100,17 @@ class Reader(object):
     def __init__(self, fname):
         self.f = minnow.open(fname)
 
-        magic, version, file_type = self.f.header(0, "qqq")
+        magic, version, self.file_type = self.f.header(0, "qqq")
         assert(magic == MAGIC)
         assert(version == VERSION)
+
 
         self.names = self.f.header(1, "s")
         self.text = self.f.header(2, "s")
         raw_columns = self.f.header(3, _column_type)
-        self.blocks = self.f.header(4, "q")
-        self.block_lengths = self.f.header(5, np.int64)
+        self.L, self.boundary, self.cells = self.f.header(4, "ffq")
+        self.blocks = self.f.header(5, "q")
+        self.block_lengths = self.f.header(6, np.int64)
 
         self.columns = [None]*len(raw_columns)
         for i in range(len(raw_columns)):
@@ -115,6 +123,9 @@ class Reader(object):
         self.names = self.names.split("$")
 
         self.length = np.sum(self.block_lengths)
+
+    def is_boundary(self):
+        return self.cells > 0
 
     def read(self, names):
         blocked_out = [[None]*self.blocks for _ in range(len(names))]
@@ -137,7 +148,11 @@ class Reader(object):
             c = self.names.index(names[i])
             assert(c >= 0)
             
-            idx = b*len(self.columns) + c
+            if self.file_type == _basic_file_type:
+                idx = b*len(self.columns) + c
+            else:
+                idx = b + c*self.blocks
+
             out[i] = self.f.data(idx)
 
             if self.columns[c].log: out[i]=10**out[i]
