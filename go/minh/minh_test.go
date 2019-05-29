@@ -16,6 +16,7 @@ func TestReaderWriter(t *testing.T) {
 
 	text := "Cats are the best. Don't we love them?!@#$%^&*(),.." + 
 		"..[]{};':\"|\\/-=_+`~meow meow meow"
+	L, boundary, cells := float32(100), float32(10), 4
 
 	columns := []Column{
 		Column{Type: minnow.Int64Group},
@@ -53,6 +54,7 @@ func TestReaderWriter(t *testing.T) {
 
 	wr := Create(fname)
 	wr.Header(names, text, columns)
+	wr.Geometry(L, boundary, cells)
 	for _, block := range blocks { wr.Block(block) }
 	wr.Close()
 
@@ -65,11 +67,13 @@ func TestReaderWriter(t *testing.T) {
 
 	if !stringsEq(rd.Names, names) || rd.Text != text ||
 		!columnsEq(rd.Columns, columns) || rd.Blocks != 2 ||
-		rd.Length != 8 || !intsEq(rd.BlockLengths, []int{5, 3}) {
+		rd.Length != 8 || !intsEq(rd.BlockLengths, []int{5, 3}) ||
+		rd.L != 100.0 || rd.Boundary != 10.0 || rd.Cells != 4 {
 		t.Fatalf("Could not read header: %v %v %v %v %v %v",
 			stringsEq(rd.Names, names),
 			rd.Text == text, columnsEq(rd.Columns, columns), rd.Blocks == 2,
-			rd.Length == 8, intsEq(rd.BlockLengths, []int{5, 3}))
+			rd.Length == 8, intsEq(rd.BlockLengths, []int{5, 3}),
+			rd.L == 100.0, rd.Boundary == 10.0, rd.Cells == 4)
 	}
 
 	for b, block := range blocks {

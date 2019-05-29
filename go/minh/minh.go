@@ -43,6 +43,8 @@ type Writer struct {
 	cols []Column
 	blockSizes []int64
 	buf []float32
+	l, boundary float32
+	cells int
 }
 
 type Column struct {
@@ -62,9 +64,9 @@ type idHeader struct {
 	Magic, Version, FileType int64
 }
 
-type Boundary struct {
-	L, Boundary float64
-	NCells int64
+type geometry struct {
+	L, Boundary float32
+	Cells int64
 }
 
 func Create(fname string) *Writer {
@@ -86,6 +88,10 @@ func (minh *Writer) Header(names []string, text string, cols []Column) {
 	minh.f.Header([]byte(text))
 	minh.f.Header(cols)
 	minh.cols = cols
+}
+
+func (minh *Writer) Geometry(L, boundary float32, cells int) {
+	minh.l, minh.boundary, minh.cells = L, boundary, cells 
 }
 
 func (minh *Writer) Block(cols []interface{}) {
@@ -144,6 +150,7 @@ func (minh *Writer) Block(cols []interface{}) {
 }
 
 func (minh *Writer) Close() {
+	minh.f.Header(boundary{ minh.l, minh.boundary, int64(minh.cells) })
 	minh.f.Header(int64(minh.blocks))
 	minh.f.Header(minh.blockSizes)
 	minh.f.Close()
@@ -167,7 +174,9 @@ type Reader struct {
 	Columns []Column
 	Blocks, Length int
 	BlockLengths []int
-	Boundary *Boundary
+	L, Boundary float32
+	Cells int
+
 
 	f *minnow.Reader
 	fileType int64
@@ -186,17 +195,17 @@ func Open(fname string) *Reader {
 			"is version %d.", fname, hd.Version, Version))
 	}
 
-	boundary := &Boundary{ }
-	byteNames := make([]byte, f.HeaderSize(2))
-	byteText := make([]byte, f.HeaderSize(3))
-	cols := make([]Column, f.HeaderSize(4)/int(unsafe.Sizeof(Column{})))
+	byteNames := make([]byte, f.HeaderSize(1))
+	byteText := make([]byte, f.HeaderSize(2))
+	cols := make([]Column, f.HeaderSize(3)/int(unsafe.Sizeof(Column{})))
+	geom := &geometry{ }
 	i64Blocks := int64(0)
 	i64BlockLengths := make([]int64, f.HeaderSize(6) / 8)
 	
-	f.Header(1, boundary)
-	f.Header(2, byteNames)
-	f.Header(3, byteText)
-	f.Header(4, cols)
+	f.Header(1, byteNames)
+	f.Header(2, byteText)
+	f.Header(3, cols)
+	f.Header(4, geom)
 	f.Header(5, &i64Blocks)
 	f.Header(6, i64BlockLengths)
 	
@@ -208,7 +217,9 @@ func Open(fname string) *Reader {
 		Columns: cols,
 		Blocks: int(i64Blocks),
 		BlockLengths: make([]int, len(i64BlockLengths)),
-		Boundary: boundary,
+		L: geom.L,
+		Boundary: geom.Boundary,
+		Cells: geom.Cells,
 	}
 
 	for i := 0; i < len(i64BlockLengths); i++ {
