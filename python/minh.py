@@ -40,6 +40,7 @@ class Writer(object):
         self.blocks = 0
         self.cols = None
         self.block_sizes = []
+        self.cells, self.L, self.boundary = 0, 0, 0
 
     def header(self, names, text, cols):
         self.cols = cols
