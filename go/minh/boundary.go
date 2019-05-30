@@ -122,11 +122,15 @@ func (minh *BoundaryWriter) hostCells(idx, reg [3]int) []int {
 
 	j := 1
 	for z := 0; z < 2; z++ {
+		if reg[2] == 0 && z == 1 { continue }
 		diff[2] = z*reg[2]
 		for y := 0; y < 2; y++ {
+			if reg[1] == 0 && y == 1 { continue }
 			diff[1] = y*reg[1]
 			for x := 0; x < 2; x++ {
+				if reg[0] == 0  && x == 1 { continue }
 				diff[0] = x*reg[0]
+
 				if diff[0] == 0 && diff[1] == 0 && diff[2] == 0 { continue }
 
 				for k := 0; k < 3; k++ {
@@ -134,12 +138,15 @@ func (minh *BoundaryWriter) hostCells(idx, reg [3]int) []int {
 					if vec[k] < 0 { vec[k] += minh.cells }
 					if vec[k] >= minh.cells { vec[k] -= minh.cells }
 				}
-				out[j] = gridIndex(vec, minh.cells)
 
+				out[j] = gridIndex(vec, minh.cells)
 				j++
+
 			}
 		}
 	}
+
+	_, _ = vec, j
 
 	return out
 }
@@ -154,7 +161,6 @@ func (minh *BoundaryWriter) idxReg(vec [3]float32) (idx, reg [3]int) {
 		}
 		reg[k] = minh.region(idx[k], vec[k])
 	}
-	
 	return idx, reg
 }
 

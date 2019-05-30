@@ -221,7 +221,52 @@ func TestBoundaryIdxReg(t *testing.T) {
 }
 
 func TestBoundaryHostCells(t *testing.T) {
-	
+	L := float32(100.0)
+	Cells := 3
+	Bnd := float32(20.0)
+	minh := &BoundaryWriter{ 
+		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
+		scaledBoundary: Bnd / L * float32(Cells),
+		cellBuf: make([]int, 8),
+	}
+
+	tests := []struct {
+		idx, reg [3]int
+		cells []int
+	} {
+		{ [3]int{0, 0, 0}, [3]int{0, 0, 0}, []int{0} },
+		{ [3]int{1, 0, 0}, [3]int{0, 0, 0}, []int{1} },
+		{ [3]int{0, 1, 0}, [3]int{0, 0, 0}, []int{3} },
+		{ [3]int{1, 1, 0}, [3]int{0, 0, 0}, []int{4} },
+		{ [3]int{0, 0, 1}, [3]int{0, 0, 0}, []int{9} },
+		{ [3]int{1, 0, 1}, [3]int{0, 0, 0}, []int{10} },
+		{ [3]int{0, 1, 1}, [3]int{0, 0, 0}, []int{12} },
+		{ [3]int{1, 1, 1}, [3]int{0, 0, 0}, []int{13} },
+
+		{ [3]int{1, 1, 1}, [3]int{ 1, 0, 0}, []int{13, 14} },
+		{ [3]int{1, 1, 1}, [3]int{-1, 0, 0}, []int{13, 12} },
+		{ [3]int{1, 1, 1}, [3]int{ 0, 1, 0}, []int{13, 16} },
+		{ [3]int{1, 1, 1}, [3]int{ 0,-1, 0}, []int{13, 10} },
+		{ [3]int{1, 1, 1}, [3]int{ 0, 0, 1}, []int{13, 22} },
+		{ [3]int{1, 1, 1}, [3]int{ 0, 0,-1}, []int{13,  4} },
+
+		{ [3]int{0, 0, 0}, [3]int{ 1, 1, 0}, []int{0, 1, 3, 4} },
+		{ [3]int{0, 0, 0}, [3]int{ 0, 1, 1}, []int{0, 3, 9, 12} },
+		{ [3]int{0, 0, 0}, [3]int{-1,-1, 0}, []int{0, 2, 6, 8} },
+		{ [3]int{0, 0, 0}, [3]int{ 0,-1,-1}, []int{0, 6, 18, 24} },
+
+		{ [3]int{0, 0, 0}, [3]int{ 1, 1, 1}, []int{0, 1, 3, 4, 9, 10, 12, 13} },
+	}
+
+	for i := range tests {
+		cells := minh.hostCells(tests[i].idx, tests[i].reg)
+		if !intsEq(cells, tests[i].cells) {
+			t.Errorf("%d) Expected BoundaryWriter.hostCells(%d %d) = " + 
+				"%d, but got %d", i, tests[i].idx, tests[i].reg,
+				tests[i].cells, cells,
+			)
+		}
+	}
 }
 
 func stringsEq(x, y []string) bool {
