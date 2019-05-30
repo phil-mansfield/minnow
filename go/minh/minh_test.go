@@ -153,6 +153,24 @@ func BoundaryRegionTest(t *testing.T) {
 	}
 }
 
+/*
+func BoundaryCellSizesTestNoOverlap(t *testing.T) {
+	minh := &BoundaryWriter{ 
+		Writer: Writer{ l: 100, boundary: 0, cells: 2 },
+	}
+	
+	// 0, 1, 2, 3, 4, 5, 6, 7
+	x := []float32{ 0.25, 0.25, 0.25, 0.25, 0.75, 0.75, 0.75, 0.75 }
+	y := []float32{ 0.25, 0.25, 0.75, 0.75, 0.25, 0.25, 0.75, 0.75 }
+	z := []float32{ 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75 }
+
+	// 0, 1, 2, 2
+	x = append(x, []float32{ 0,    0.25, 0.5,  0.75 }...)
+	y = append(y, []float32{ 0.25, 0.25, 0.25, 0.25 }...)
+	z = append(z, []float32{ 0.25, 0.25, 0.25, 0.25 }...)
+}
+*/
+
 func stringsEq(x, y []string) bool {
 	if len(x) != len(y) { return false }
 	for i := range x { if x[i] != y[i] { return false } }
