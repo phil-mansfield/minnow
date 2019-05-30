@@ -1,6 +1,7 @@
 package minh
 
 import (
+	"fmt"
 	"math"
 	"testing"
 
@@ -117,12 +118,13 @@ func TestReaderWriter(t *testing.T) {
 }
 
 
-func BoundaryRegionTest(t *testing.T) {
+func TestBoundaryRegion(t *testing.T) {
 	L := float32(90.0)
 	Bnd := float32(10.0)
 	Cells := 3
 	minh := &BoundaryWriter{ 
 		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
+		scaledBoundary: Bnd/L * float32(Cells),
 	}
 
 	tests := []struct {
@@ -151,7 +153,7 @@ func BoundaryRegionTest(t *testing.T) {
 	}
 }
 
-func BoundaryIdxSumTest(t *testing.T) {
+func TestBoundaryIdxSum(t *testing.T) {
 	L := float32(100.0)
 	Cells := 2
 	Bnd := float32(20.0)
@@ -161,16 +163,16 @@ func BoundaryIdxSumTest(t *testing.T) {
 
 	tests := []struct{
 		vec [3]float32
-		expIdx, expSum [3]int
+		expSum, expIdx [3]int
 	} {
 		{[3]float32{0.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 0}},
-		{[3]float32{0.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 1}},
-		{[3]float32{0.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 0}},
-		{[3]float32{0.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 1}},
-		{[3]float32{1.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 0}},
-		{[3]float32{1.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 1}},
-		{[3]float32{1.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 0}},
-		{[3]float32{1.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 1}},
+		{[3]float32{0.5, 0.5, 1.5}, [3]int{ 0,  0,  1}, [3]int{0, 0, 1}},
+		{[3]float32{0.5, 1.5, 0.5}, [3]int{ 0,  1,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.5, 1.5}, [3]int{ 0,  1,  1}, [3]int{0, 1, 1}},
+		{[3]float32{1.5, 0.5, 0.5}, [3]int{ 1,  0,  0}, [3]int{1, 0, 0}},
+		{[3]float32{1.5, 0.5, 1.5}, [3]int{ 1,  0,  1}, [3]int{1, 0, 1}},
+		{[3]float32{1.5, 1.5, 0.5}, [3]int{ 1,  1,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.5, 1.5}, [3]int{ 1,  1,  1}, [3]int{1, 1, 1}},
 
 		{[3]float32{1.9, 1.5, 0.5}, [3]int{ 1,  0,  0}, [3]int{1, 1, 0}},
 		{[3]float32{1.1, 1.5, 0.5}, [3]int{-1,  0,  0}, [3]int{1, 1, 0}},
@@ -215,6 +217,10 @@ func BoundaryIdxSumTest(t *testing.T) {
 				i, tests[i].vec, tests[i].expSum, minh.sum)
 		}
 	}
+	fmt.Println(":)")
+}
+
+func TestBoundaryCellSizes(test *testing.T) {
 }
 
 func stringsEq(x, y []string) bool {

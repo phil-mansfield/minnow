@@ -19,10 +19,7 @@ type BoundaryWriter struct {
 	cellIndex [][]int
 	i64Buf []int64
 	f32Buf []float32
-
-	// vector buffers
-	vec [3]float32
-	idx, sum [3]int
+	cellBuf []int
 }
 
 func CreateBoundary(fname string) *BoundaryWriter {
@@ -40,7 +37,8 @@ func (minh *BoundaryWriter) Block(cols []interface{}) {
 }
 
 func (minh *BoundaryWriter) Coordinates(x, y, z []float32) {
-	minh.scaledBoundary = minh.boundary / minh.l
+	minh.scaledBoundary = minh.boundary / (minh.l / float32(minh.cells))
+	minh.cellBuf = make([]int, 8)
 
 	coord := [3][]float32{ x, y, z }
 	sizes := minh.cellSizes(coord)
@@ -68,19 +66,20 @@ func (minh *BoundaryWriter) indices(
 	}
 
 	// set boundaryFlag and index.
-	update := func(vec [3]int, i int, flag int8) {
-		g := gridIndex(vec, c)
+	update := func(g, i int, flag int8) {
 		indices[g][curr[g]] = i
 		boundaryFlag[g][curr[g]] = flag
 		curr[g]++
 	}
 
 	// insert all points
+	vec := [3]float32{ }
 	for i := range coord[0] {
-		for k := 0; k < 3; k++ { minh.vec[k] = coord[k][i] / dx }
-		minh.idxSum()
-		update(minh.idx, i, 0)
-		if minh.idx != minh.sum { update(minh.sum, i, 1) }
+		for k := 0; k < 3; k++ { vec[k] = coord[k][i] / dx }
+		idx, reg := minh.idxReg(vec)
+		gs := minh.hostCells(idx, reg)
+		update(gs[0], i, 0)
+		for _, g := range gs[1:] { update(g, i, 1) }
 	}
 
 	return indices, boundaryFlag
@@ -97,36 +96,66 @@ func (minh *BoundaryWriter) cellSizes(coord [3][]float32) []int {
 	dx := minh.l / float32(c)	
 	sizes := make([]int, c*c*c)
 
-	// Increase size.
-	update := func(vec [3]int) {
-		g := gridIndex(minh.sum, c)
-		sizes[g]++
-	}
-
 	// insert all points
+	vec := [3]float32{ }
 	for i := range coord[0] {
-		for k := 0; k < 3; k++ { minh.vec[k] = coord[k][i] / dx }
-		minh.idxSum()
-		update(minh.idx)
-		if minh.idx != minh.sum { update(minh.sum) }
+		for k := 0; k < 3; k++ { vec[k] = coord[k][i] / dx }
+		idx, reg := minh.idxReg(vec)
+
+		gs := minh.hostCells(idx, reg)
+		for _, g := range gs { sizes[g]++ }
 	}
 	return sizes
 }
 
-// idxSum writes the index and sum = index + region for a given vector.
-func (minh *BoundaryWriter) idxSum() {
+func (minh *BoundaryWriter) hostCells(idx, reg [3]int) []int {
+	dims := 0
 	for k := 0; k < 3; k++ {
-		minh.idx[k] = int(minh.vec[k])
-		if minh.idx[k] >= minh.cells {
-			minh.idx[k] -= minh.cells
-			minh.vec[k] -= minh.l
-		}
-		reg := minh.region(minh.idx[k], minh.vec[k])
-
-		minh.sum[k] = minh.idx[k] + reg
-		if minh.sum[k] < 0 { minh.sum[k] += minh.cells }
-		if minh.sum[k] >= minh.cells { minh.sum[k] -= minh.cells }
+		if reg[k] != 0 { dims++ }
 	}
+
+	out := minh.cellBuf[:1 << uint(dims)]
+	out[0] = gridIndex(idx, minh.cells)
+	if len(out) == 1 { return out }
+
+	diff, vec := [3]int{}, [3]int{}
+
+	j := 1
+	for z := 0; z < 2; z++ {
+		diff[2] = z*reg[2]
+		for y := 0; y < 2; y++ {
+			diff[1] = y*reg[1]
+			for x := 0; x < 2; x++ {
+				diff[0] = x*reg[0]
+				if diff[0] == 0 && diff[1] == 0 && diff[2] == 0 { continue }
+
+				for k := 0; k < 3; k++ {
+					vec[k] = idx[k] + diff[k]
+					if vec[k] < 0 { vec[k] += minh.cells }
+					if vec[k] >= minh.cells { vec[k] -= minh.cells }
+				}
+				out[j] = gridIndex(vec, minh.cells)
+
+				j++
+			}
+		}
+	}
+
+	return out
+}
+
+// idxRegion writes the index and region for a given vector.
+func (minh *BoundaryWriter) idxReg(vec [3]float32) (idx, reg [3]int) {
+	for k := 0; k < 3; k++ {
+		idx[k] = int(vec[k])
+		if idx[k] >= minh.cells {
+			idx[k] -= minh.cells
+			vec[k] -= minh.l
+		}
+		reg[k] = minh.region(idx[k], vec[k])
+	}
+	
+	return idx, reg
 }
 
 // Region returns an int representing the location of x within cell ix. x needs
@@ -136,12 +165,11 @@ func (minh *BoundaryWriter) idxSum() {
 // region.
 func (minh *BoundaryWriter) region(ix int, x float32) int {
 	low := float32(ix)
-	high := low + 1
 
 	bLow := low + minh.scaledBoundary
-	if x <= bLow { return -1 }
-	bHigh := high - minh.scaledBoundary
-	if x > bHigh { return +1 }
+	if x < bLow { return -1 }
+	bHigh := low + 1 - minh.scaledBoundary
+	if x >= bHigh { return +1 }
 	return 0
 }
 
