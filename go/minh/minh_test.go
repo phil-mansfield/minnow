@@ -130,6 +130,13 @@ func BoundaryRegionTest(t *testing.T) {
 		{0, -1},
 		{15, 0},
 		{25, +1},
+		{30, -1},
+		{45, 0},
+		{55, +1},
+		{60, -1},
+		{75, 0},
+		{85, +1},
+
 	}
 
 	minh := &BoundaryWriter{ 
@@ -145,7 +152,6 @@ func BoundaryRegionTest(t *testing.T) {
 		}
 	}
 }
-
 
 func stringsEq(x, y []string) bool {
 	if len(x) != len(y) { return false }
