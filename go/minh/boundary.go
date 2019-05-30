@@ -1,14 +1,14 @@
 package minh
 
 import (
+	"fmt"
 	"strings"
-
+	
 	minnow "github.com/phil-mansfield/minnow/go"
 )
 
 type BoundaryWriter struct {
 	Writer
-	rd *Reader
 
 	names []string
 	cols []Column
@@ -161,7 +161,7 @@ func (minh *BoundaryWriter) Column(name string, col Column, x interface{}) {
 			}
 			minh.f.Data(fx)
 		default:
-			panic("NYI")
+			panic(fmt.Sprintf("Can't write column with type flag %d", col.Type))
 		}
 	}	
 }

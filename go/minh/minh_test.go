@@ -117,6 +117,36 @@ func TestReaderWriter(t *testing.T) {
 }
 
 
+func BoundaryRegionTest(t *testing.T) {
+	L := float32(90.0)
+	Bnd := float32(10.0)
+	Cells := 3
+	lims := []float32{ 0, 30, 60, 90 }
+
+	tests := []struct {
+		x float32
+		exp int
+	} {
+		{0, -1},
+		{15, 0},
+		{25, +1},
+	}
+
+	minh := &BoundaryWriter{ 
+		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
+	}
+
+	for i := range tests {
+		ix := int(tests[i].x / 30)
+		res := minh.region(ix, tests[i].x, lims)
+		if res != tests[i].exp {
+			t.Errorf("%d) Expected region(%d, %f) = %d, but got %d",
+				i, ix, tests[i].x, tests[i].exp, res)
+		}
+	}
+}
+
+
 func stringsEq(x, y []string) bool {
 	if len(x) != len(y) { return false }
 	for i := range x { if x[i] != y[i] { return false } }
