@@ -71,24 +71,23 @@ type geometry struct {
 
 func Create(fname string) *Writer {
 	wr := &Writer{ }
-	wr.create(basicFileType)
+	wr.create(fname, basicFileType)
 	return wr
 }
 
-func (wr *Writer) create(fileType int64) {
+func (wr *Writer) create(fname string, fileType int64) {
 	if unsafe.Sizeof(Column{}) != 256 {
 		panic(fmt.Sprintf("Sizeof(Column{}) = %d, not 256. Change buffer size.",
 			unsafe.Sizeof(Column{})))
 	}
 
-	wr.f =  minnow.Create(fname),
-	wr.f.Header(idHeader{ Magic, Version, basicFileType })
-	wr.f.Header(Boundary{ })	
+	wr.f = minnow.Create(fname)
+	wr.f.Header(idHeader{ Magic, Version, fileType })
 }
 
 func (minh *Writer) Header(names []string, text string, cols []Column) {
-	minh.f.Header([]byte(strings.Join(names, "$")))
 	minh.f.Header([]byte(text))
+	minh.f.Header([]byte(strings.Join(names, "$")))
 	minh.f.Header(cols)
 	minh.cols = cols
 }
@@ -153,7 +152,7 @@ func (minh *Writer) Block(cols []interface{}) {
 }
 
 func (minh *Writer) Close() {
-	minh.f.Header(boundary{ minh.l, minh.boundary, int64(minh.cells) })
+	minh.f.Header(geometry{ minh.l, minh.boundary, int64(minh.cells) })
 	minh.f.Header(int64(minh.blocks))
 	minh.f.Header(minh.blockSizes)
 	minh.f.Close()
@@ -198,15 +197,15 @@ func Open(fname string) *Reader {
 			"is version %d.", fname, hd.Version, Version))
 	}
 
-	byteNames := make([]byte, f.HeaderSize(1))
-	byteText := make([]byte, f.HeaderSize(2))
+	byteText := make([]byte, f.HeaderSize(1))
+	byteNames := make([]byte, f.HeaderSize(2))
 	cols := make([]Column, f.HeaderSize(3)/int(unsafe.Sizeof(Column{})))
 	geom := &geometry{ }
 	i64Blocks := int64(0)
 	i64BlockLengths := make([]int64, f.HeaderSize(6) / 8)
 	
-	f.Header(1, byteNames)
-	f.Header(2, byteText)
+	f.Header(1, byteText)
+	f.Header(2, byteNames)
 	f.Header(3, cols)
 	f.Header(4, geom)
 	f.Header(5, &i64Blocks)
@@ -222,7 +221,7 @@ func Open(fname string) *Reader {
 		BlockLengths: make([]int, len(i64BlockLengths)),
 		L: geom.L,
 		Boundary: geom.Boundary,
-		Cells: geom.Cells,
+		Cells: int(geom.Cells),
 	}
 
 	for i := 0; i < len(i64BlockLengths); i++ {
