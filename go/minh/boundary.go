@@ -117,7 +117,10 @@ func (minh *BoundaryWriter) cellSizes(coord [3][]float32) []int {
 func (minh *BoundaryWriter) idxSum() {
 	for k := 0; k < 3; k++ {
 		minh.idx[k] = int(minh.vec[k])
-		if minh.idx[k] >= minh.cells { minh.idx[k] -= minh.cells}
+		if minh.idx[k] >= minh.cells {
+			minh.idx[k] -= minh.cells
+			minh.vec[k] -= minh.l
+		}
 		reg := minh.region(minh.idx[k], minh.vec[k])
 
 		minh.sum[k] = minh.idx[k] + reg

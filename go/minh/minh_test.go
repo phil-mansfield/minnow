@@ -121,21 +121,20 @@ func BoundaryRegionTest(t *testing.T) {
 	L := float32(90.0)
 	Bnd := float32(10.0)
 	Cells := 3
-	lims := []float32{ 0, 30, 60, 90 }
 
 	tests := []struct {
 		x float32
 		exp int
 	} {
-		{0, -1},
-		{15, 0},
-		{25, +1},
-		{30, -1},
-		{45, 0},
-		{55, +1},
-		{60, -1},
-		{75, 0},
-		{85, +1},
+		{0.0, -1},
+		{0.5, 0},
+		{0.9, +1},
+		{1.0, -1},
+		{1.5, 0},
+		{1.9, +1},
+		{2.0, -1},
+		{2.5, 0},
+		{2.9, +1},
 
 	}
 
@@ -144,8 +143,8 @@ func BoundaryRegionTest(t *testing.T) {
 	}
 
 	for i := range tests {
-		ix := int(tests[i].x / 30)
-		res := minh.region(ix, tests[i].x, lims)
+		ix := int(tests[i].x)
+		res := minh.region(ix, tests[i].x)
 		if res != tests[i].exp {
 			t.Errorf("%d) Expected region(%d, %f) = %d, but got %d",
 				i, ix, tests[i].x, tests[i].exp, res)
