@@ -1,7 +1,6 @@
 package minh
 
 import (
-	"fmt"
 	"math"
 	"testing"
 
@@ -153,26 +152,27 @@ func TestBoundaryRegion(t *testing.T) {
 	}
 }
 
-func TestBoundaryIdxSum(t *testing.T) {
+func TestBoundaryIdxReg(t *testing.T) {
 	L := float32(100.0)
 	Cells := 2
 	Bnd := float32(20.0)
 	minh := &BoundaryWriter{ 
 		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
+		scaledBoundary: Bnd / L * float32(Cells),
 	}
 
 	tests := []struct{
 		vec [3]float32
-		expSum, expIdx [3]int
+		expReg, expIdx [3]int
 	} {
 		{[3]float32{0.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 0}},
-		{[3]float32{0.5, 0.5, 1.5}, [3]int{ 0,  0,  1}, [3]int{0, 0, 1}},
-		{[3]float32{0.5, 1.5, 0.5}, [3]int{ 0,  1,  0}, [3]int{0, 1, 0}},
-		{[3]float32{0.5, 1.5, 1.5}, [3]int{ 0,  1,  1}, [3]int{0, 1, 1}},
-		{[3]float32{1.5, 0.5, 0.5}, [3]int{ 1,  0,  0}, [3]int{1, 0, 0}},
-		{[3]float32{1.5, 0.5, 1.5}, [3]int{ 1,  0,  1}, [3]int{1, 0, 1}},
-		{[3]float32{1.5, 1.5, 0.5}, [3]int{ 1,  1,  0}, [3]int{1, 1, 0}},
-		{[3]float32{1.5, 1.5, 1.5}, [3]int{ 1,  1,  1}, [3]int{1, 1, 1}},
+		{[3]float32{0.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 1}},
+		{[3]float32{0.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 1}},
+		{[3]float32{1.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 0}},
+		{[3]float32{1.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 1}},
+		{[3]float32{1.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 1}},
 
 		{[3]float32{1.9, 1.5, 0.5}, [3]int{ 1,  0,  0}, [3]int{1, 1, 0}},
 		{[3]float32{1.1, 1.5, 0.5}, [3]int{-1,  0,  0}, [3]int{1, 1, 0}},
@@ -202,25 +202,26 @@ func TestBoundaryIdxSum(t *testing.T) {
 		{[3]float32{0.1, 1.9, 1.1}, [3]int{-1,  1, -1}, [3]int{0, 1, 1}},
 		{[3]float32{0.1, 1.1, 1.9}, [3]int{-1, -1,  1}, [3]int{0, 1, 1}},
 		{[3]float32{0.1, 1.1, 1.1}, [3]int{-1, -1, -1}, [3]int{0, 1, 1}},
+
+		{[3]float32{2, 2, 2}, [3]int{-1, -1, -1}, [3]int{0, 0, 0}},
 	}
 
 	for i := range tests {
-		minh.vec = tests[i].vec
-		minh.idxSum()
+		idx, reg := minh.idxReg(tests[i].vec)
 		
-		if minh.idx != tests[i].expIdx {
-			t.Errorf("%d) Expected idxSum(%.1f) -> idx = %d, but got %d",
-				i, tests[i].vec, tests[i].expIdx, minh.idx)
+		if idx != tests[i].expIdx {
+			t.Errorf("%d) Expected idxReg(%.1f) -> idx = %d, but got %d",
+				i, tests[i].vec, tests[i].expIdx, idx)
 		}
-		if minh.sum != tests[i].expSum {
-			t.Errorf("%d) Expected idxSum(%.1f) -> sum = %d, but got %d",
-				i, tests[i].vec, tests[i].expSum, minh.sum)
+		if reg != tests[i].expReg {
+			t.Errorf("%d) Expected idxReg(%.1f) -> reg = %d, but got %d",
+				i, tests[i].vec, tests[i].expReg, reg)
 		}
 	}
-	fmt.Println(":)")
 }
 
-func TestBoundaryCellSizes(test *testing.T) {
+func TestBoundaryHostCells(t *testing.T) {
+	
 }
 
 func stringsEq(x, y []string) bool {
