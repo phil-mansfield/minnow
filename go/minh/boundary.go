@@ -139,7 +139,7 @@ func (minh *BoundaryWriter) region(ix int, x float32) int {
 	high := low + 1
 
 	bLow := low + minh.scaledBoundary
-	if x < bLow { return -1 }
+	if x <= bLow { return -1 }
 	bHigh := high - minh.scaledBoundary
 	if x > bHigh { return +1 }
 	return 0

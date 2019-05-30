@@ -121,6 +121,9 @@ func BoundaryRegionTest(t *testing.T) {
 	L := float32(90.0)
 	Bnd := float32(10.0)
 	Cells := 3
+	minh := &BoundaryWriter{ 
+		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
+	}
 
 	tests := []struct {
 		x float32
@@ -138,10 +141,6 @@ func BoundaryRegionTest(t *testing.T) {
 
 	}
 
-	minh := &BoundaryWriter{ 
-		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
-	}
-
 	for i := range tests {
 		ix := int(tests[i].x)
 		res := minh.region(ix, tests[i].x)
@@ -152,23 +151,71 @@ func BoundaryRegionTest(t *testing.T) {
 	}
 }
 
-/*
-func BoundaryCellSizesTestNoOverlap(t *testing.T) {
+func BoundaryIdxSumTest(t *testing.T) {
+	L := float32(100.0)
+	Cells := 2
+	Bnd := float32(20.0)
 	minh := &BoundaryWriter{ 
-		Writer: Writer{ l: 100, boundary: 0, cells: 2 },
+		Writer: Writer{ l: L, boundary: Bnd, cells: Cells },
 	}
-	
-	// 0, 1, 2, 3, 4, 5, 6, 7
-	x := []float32{ 0.25, 0.25, 0.25, 0.25, 0.75, 0.75, 0.75, 0.75 }
-	y := []float32{ 0.25, 0.25, 0.75, 0.75, 0.25, 0.25, 0.75, 0.75 }
-	z := []float32{ 0.25, 0.75, 0.25, 0.75, 0.25, 0.75, 0.25, 0.75 }
 
-	// 0, 1, 2, 2
-	x = append(x, []float32{ 0,    0.25, 0.5,  0.75 }...)
-	y = append(y, []float32{ 0.25, 0.25, 0.25, 0.25 }...)
-	z = append(z, []float32{ 0.25, 0.25, 0.25, 0.25 }...)
+	tests := []struct{
+		vec [3]float32
+		expIdx, expSum [3]int
+	} {
+		{[3]float32{0.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 0}},
+		{[3]float32{0.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 0, 1}},
+		{[3]float32{0.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{0, 1, 1}},
+		{[3]float32{1.5, 0.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 0}},
+		{[3]float32{1.5, 0.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 0, 1}},
+		{[3]float32{1.5, 1.5, 0.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.5, 1.5}, [3]int{ 0,  0,  0}, [3]int{1, 1, 1}},
+
+		{[3]float32{1.9, 1.5, 0.5}, [3]int{ 1,  0,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.1, 1.5, 0.5}, [3]int{-1,  0,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.9, 0.5}, [3]int{ 0,  1,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.1, 0.5}, [3]int{ 0, -1,  0}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.5, 0.9}, [3]int{ 0,  0,  1}, [3]int{1, 1, 0}},
+		{[3]float32{1.5, 1.5, 0.1}, [3]int{ 0,  0, -1}, [3]int{1, 1, 0}},
+
+		{[3]float32{0.9, 1.9, 0.5}, [3]int{ 1,  1,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.1, 1.9, 0.5}, [3]int{-1,  1,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.9, 1.1, 0.5}, [3]int{ 1, -1,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.1, 1.1, 0.5}, [3]int{-1, -1,  0}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.9, 0.9}, [3]int{ 0,  1,  1}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.1, 0.9}, [3]int{ 0, -1,  1}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.9, 0.1}, [3]int{ 0,  1, -1}, [3]int{0, 1, 0}},
+		{[3]float32{0.5, 1.1, 0.1}, [3]int{ 0, -1, -1}, [3]int{0, 1, 0}},
+		{[3]float32{0.9, 1.5, 0.9}, [3]int{ 1,  0,  1}, [3]int{0, 1, 0}},
+		{[3]float32{0.1, 1.5, 0.9}, [3]int{-1,  0,  1}, [3]int{0, 1, 0}},
+		{[3]float32{0.9, 1.5, 0.1}, [3]int{ 1,  0, -1}, [3]int{0, 1, 0}},
+		{[3]float32{0.1, 1.5, 0.1}, [3]int{-1,  0, -1}, [3]int{0, 1, 0}},
+
+		{[3]float32{0.9, 1.9, 1.9}, [3]int{ 1,  1,  1}, [3]int{0, 1, 1}},
+		{[3]float32{0.9, 1.9, 1.1}, [3]int{ 1,  1, -1}, [3]int{0, 1, 1}},
+		{[3]float32{0.9, 1.1, 1.9}, [3]int{ 1, -1,  1}, [3]int{0, 1, 1}},
+		{[3]float32{0.9, 1.1, 1.1}, [3]int{ 1, -1, -1}, [3]int{0, 1, 1}},
+		{[3]float32{0.1, 1.9, 1.9}, [3]int{-1,  1,  1}, [3]int{0, 1, 1}},
+		{[3]float32{0.1, 1.9, 1.1}, [3]int{-1,  1, -1}, [3]int{0, 1, 1}},
+		{[3]float32{0.1, 1.1, 1.9}, [3]int{-1, -1,  1}, [3]int{0, 1, 1}},
+		{[3]float32{0.1, 1.1, 1.1}, [3]int{-1, -1, -1}, [3]int{0, 1, 1}},
+	}
+
+	for i := range tests {
+		minh.vec = tests[i].vec
+		minh.idxSum()
+		
+		if minh.idx != tests[i].expIdx {
+			t.Errorf("%d) Expected idxSum(%.1f) -> idx = %d, but got %d",
+				i, tests[i].vec, tests[i].expIdx, minh.idx)
+		}
+		if minh.sum != tests[i].expSum {
+			t.Errorf("%d) Expected idxSum(%.1f) -> sum = %d, but got %d",
+				i, tests[i].vec, tests[i].expSum, minh.sum)
+		}
+	}
 }
-*/
 
 func stringsEq(x, y []string) bool {
 	if len(x) != len(y) { return false }
