@@ -269,6 +269,80 @@ func TestBoundaryHostCells(t *testing.T) {
 	}
 }
 
+func TestCellSizes(t *testing.T) {
+	L := float32(100.0)
+	cells := 2
+
+	tests := []struct {
+		bnd float32
+		coord [3][]float32
+		sizes []int
+	} {
+		{ 0, [3][]float32{{}, {}, {}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 0} },
+
+		{ 0, [3][]float32{{ 0}, { 0}, { 0}},
+			[]int{1, 0, 0, 0, 0, 0, 0, 0} },
+		{ 0, [3][]float32{{50}, { 0}, { 0}},
+			[]int{0, 1, 0, 0, 0, 0, 0, 0} },
+		{ 0, [3][]float32{{ 0}, {50}, { 0}},
+			[]int{0, 0, 1, 0, 0, 0, 0, 0} },
+		{ 0, [3][]float32{{50}, {50}, { 0}},
+			[]int{0, 0, 0, 1, 0, 0, 0, 0} },
+		{ 0, [3][]float32{{ 0}, { 0}, {50}},
+			[]int{0, 0, 0, 0, 1, 0, 0, 0} },
+		{ 0, [3][]float32{{50}, { 0}, {50}},
+			[]int{0, 0, 0, 0, 0, 1, 0, 0} },
+		{ 0, [3][]float32{{ 0}, {50}, {50}},
+			[]int{0, 0, 0, 0, 0, 0, 1, 0} },
+		{ 0, [3][]float32{{50}, {50}, {50}},
+			[]int{0, 0, 0, 0, 0, 0, 0, 1} },
+
+		{ 20, [3][]float32{{ 0}, { 0}, { 0}},
+			[]int{1, 1, 1, 1, 1, 1, 1, 1} },
+		{ 20, [3][]float32{{50}, {50}, {50}},
+			[]int{1, 1, 1, 1, 1, 1, 1, 1} },
+		{ 20, [3][]float32{{ 0}, {50}, { 0}},
+			[]int{1, 1, 1, 1, 1, 1, 1, 1} },
+
+		{ 20, [3][]float32{{25}, {25}, {25}},
+			[]int{1, 0, 0, 0, 0, 0, 0, 0} },
+
+		{ 20, [3][]float32{{ 0}, {25}, {25}},
+			[]int{1, 1, 0, 0, 0, 0, 0, 0} },
+
+		{ 20, [3][]float32{{50}, {50}, {25}},
+			[]int{1, 1, 1, 1, 0, 0, 0, 0} },
+		{ 20, [3][]float32{{50}, {25}, {25}},
+			[]int{1, 1, 0, 0, 0, 0, 0, 0} },
+
+	}
+
+	for i := range tests {
+		minh := BoundaryWriter{
+			Writer: Writer{ l: L, boundary: tests[i].bnd, cells: cells },
+			cellBuf: make([]int, 8),
+			scaledBoundary: tests[i].bnd / L * float32(cells),
+		}
+
+		sizes := minh.cellSizes(tests[i].coord)
+		if !intsEq(sizes, tests[i].sizes) {
+			t.Errorf("%d) expected BoundaryWriter.cellSizes(%g) = %d, " +
+				"but got %d.", i, tests[i].coord, tests[i].sizes, sizes)
+		}
+	}
+}
+
+func BoundaryTest(t *testing.T) {
+	vecs := [][3]float32{
+	}
+	coord := [3][]float32{
+		make([]flaot32, len(vecs)),
+		make([]flaot32, len(vecs)),
+		make([]flaot32, len(vecs)),
+	}
+}
+
 func stringsEq(x, y []string) bool {
 	if len(x) != len(y) { return false }
 	for i := range x { if x[i] != y[i] { return false } }
