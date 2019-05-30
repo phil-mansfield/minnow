@@ -129,24 +129,21 @@ func (minh *Writer) Block(cols []interface{}) {
 			lim := [2]float32{ minh.cols[i].Low, minh.cols[i].High }
 			x := cols[i].([]float32)
 			minh.buf = expandFloat32(minh.buf, len(x))
-			for j := range x {
-				minh.buf[j] = x[j]
-
-				if minh.cols[i].Log != 0 {
-					minh.buf[j] = float32(math.Log10(float64(minh.buf[j])))
-				}
-				if minh.buf[j] < minh.cols[i].Low {
-					minh.buf[j] = minh.cols[i].Low
-				}
-				if minh.buf[j] >= minh.cols[i].High {
-					minh.buf[j] = math.Nextafter32(
-						minh.cols[i].High, float32(math.Inf(-1)),
-					)
-				}
-			}
+			for j := range x { minh.buf[j] = x[j] }
+			processFloatGroup(minh.buf, minh.cols[i])
 
 			minh.f.FloatGroup(N, lim, minh.cols[i].Dx)
 			minh.f.Data(minh.buf)
+		}
+	}
+}
+
+func processFloatGroup(buf []float32, col Column) {
+	for j := range buf {
+		if col.Log != 0 { buf[j] = float32(math.Log10(float64(buf[j]))) }
+		if buf[j] < col.Low { buf[j] = col.Low }
+		if buf[j] >= col.High {
+			buf[j] = math.Nextafter32(col.High, float32(math.Inf(-1)))
 		}
 	}
 }
