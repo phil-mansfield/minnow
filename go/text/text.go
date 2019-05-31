@@ -14,6 +14,7 @@ type Reader struct {
 
 	config ReaderConfig
 
+	threads int
 	blocks int
 	blockStarts []int64
 	blockSizes []int64
@@ -60,6 +61,7 @@ func openFromReader(f io.ReadSeeker, configOpt ...ReaderConfig) *Reader {
 	
 	rd := &Reader{ f: f, config: config }
 	rd.findBlocks(readerSize(f))
+	rd.threads = 1
 
 	return rd
 }
@@ -169,6 +171,8 @@ func (rd *Reader) Blocks() int { return rd.blocks }
 // Close closes the file.
 func (rd *Reader) Close() { rd.closer.Close() }
 
+func (rd *Reader) SetThreads(n int) { rd.threads = n }
+
 // Block reads the columns associate with names in block b into the array of
 // []int64 and []float32 buffers in out. You'll need to intialize each field in
 // out with []int64{} or []float32{} instead of nil. Sorry.
@@ -191,8 +195,8 @@ func (rd *Reader) Block(b int, names []string, out []interface{}) {
 	for i := range out { out[i] = expandGeneric(out[i], len(lines)) }
 
 	iIdx, iCols, fIdx, fCols := rd.splitByType(names, out)
-	parseInt64s(lines, rd.config.Separator, iIdx, iCols)
-	parseFloat32s(lines, rd.config.Separator, fIdx, fCols)
+	parseInt64s(lines, rd.config.Separator, iIdx, iCols, rd.threads)
+	parseFloat32s(lines, rd.config.Separator, fIdx, fCols, rd.threads)
 }
 
 // splitByType splits the output slices by type (i.e. []int64 and []float32).

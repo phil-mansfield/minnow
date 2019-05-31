@@ -40,6 +40,7 @@ func consistentTreesNames(line string) []string {
 	return names
 }
 
+func (r *Rockstar) SetThreads(n int) { r.rd.SetThreads(n) }
 func (r *Rockstar) Header() string { return r.rd.CommentHeader() }
 func (r *Rockstar) SetNames(names []string) { r.rd.SetNames(names) }
 func (r *Rockstar) Blocks() int { return r.rd.Blocks() }

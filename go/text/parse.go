@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"bytes"
+	"github.com/phil-mansfield/minnow/go/thread"
 )
 
 // split splits a byte slice at each separating character. Faster than
@@ -76,85 +77,100 @@ func trim(lines [][]byte, sep byte) [][]byte {
 	return lines[:j]
 }
 
-func parseInt64s(lines [][]byte, sep byte, idxs []int, out [][]int64) error {
-	if len(lines) == 0 || len(idxs) == 0 { return nil }
-	buf := make([][]byte, len(bytes.Fields(lines[0])))
+func parseInt64s(
+	lines [][]byte, sep byte, idxs []int, out [][]int64, threads int,
+) {
+	if len(lines) == 0 || len(idxs) == 0 { return }
 
 	maxCol := -1
 	for _, i := range idxs {
 		if i > maxCol { maxCol = i }
 	}
+	
+	bufLen := len(bytes.Fields(lines[0]))
 
-	if maxCol >= len(buf) {
-		return fmt.Errorf(
+	if maxCol >= bufLen {
+		panic(fmt.Sprintf(
 			"Data has %d columns, but column %d was requested.",
-			len(buf), maxCol,
-		)
+			bufLen, maxCol,
+		))
 	}
 
-	for i, line := range lines {
-		// Break line up into fields/words
 
-		words := fields(line, sep, buf)
-		if len(words) != len(buf) {
-			return fmt.Errorf(
-				"Data on line %d has %d columns, not %d.",
-				i+1, len(words), len(buf),
-			)
-		}
+	worker := func(worker, start, end, step int) {
+		buf := make([][]byte, bufLen)
+				
+		for i := start; i < end; i += step {
+			line := lines[i]
 
-		// Parse strings.
-
-		for j := range idxs {
-			x, err := strconv.Atoi(string(words[idxs[j]]))
-			if err != nil { return err }
-			out[j][i] = int64(x)
+			// Break line up into fields/words
+			
+			words := fields(line, sep, buf)
+			if len(words) != len(buf) {
+				panic(fmt.Sprintf(
+					"Data on line %d has %d columns, not %d.",
+					i+1, len(words), len(buf),
+				))
+			}
+			
+			// Parse strings.
+			
+			for j := range idxs {
+				x, err := strconv.Atoi(string(words[idxs[j]]))
+				if err != nil { panic(err.Error()) }
+				out[j][i] = int64(x)
+			}
 		}
 	}
-
-	return nil
+	thread.SplitArray(len(lines), threads, worker)
 }
 
 func parseFloat32s(
-	lines [][]byte, sep byte, idxs []int, out [][]float32,
-) error {
-	if len(lines) == 0 || len(idxs) == 0 { return nil }
-	buf := make([][]byte, len(bytes.Fields(lines[0])))
+	lines [][]byte, sep byte, idxs []int, out [][]float32, threads int,
+) {
+	if len(lines) == 0 || len(idxs) == 0 { return }
 
 	maxCol := -1
 	for _, i := range idxs {
 		if i > maxCol { maxCol = i }
 	}
+	
+	bufLen := len(bytes.Fields(lines[0]))
 
-	if maxCol >= len(buf) {
-		return fmt.Errorf(
+	if maxCol >= bufLen {
+		panic(fmt.Sprintf(
 			"Data has %d columns, but column %d was requested.",
-			len(buf), maxCol,
-		)
+			bufLen, maxCol,
+		))
 	}
 
-	for i, line := range lines {
 
-		// Break line up into fields/words
-
-		words := fields(line, sep, buf)
-		if len(words) != len(buf) {
-			return fmt.Errorf(
-				"Data on line %d has %d columns, not %d.",
-				i+1, len(words), len(buf),
-			)
-		}
-
-		// Parse strings.
-
-		for j := range idxs {
-			x, err := strconv.ParseFloat(string(words[idxs[j]]), 32)
-			if err != nil { return err }
-			out[j][i] = float32(x)
+	worker := func(worker, start, end, step int) {
+		buf := make([][]byte, bufLen)
+				
+		for i := start; i < end; i += step {
+			line := lines[i]
+			// Break line up into fields/words
+			
+			words := fields(line, sep, buf)
+			if len(words) != len(buf) {
+				panic(fmt.Sprintf(
+					"Data on line %d has %d columns, not %d.",
+					i+1, len(words), len(buf),
+				))
+			}
+			
+			// Parse strings.
+			
+			for j := range idxs {
+				x, err := strconv.ParseFloat(string(words[idxs[j]]), 32)
+				if err != nil { panic(err.Error()) }
+				out[j][i] = float32(x)
+			}
 		}
 	}
 
-	return nil
+	thread.SplitArray(len(lines), threads, worker)
 }
 
 // Optimized and buffered analog to the standard library's bytes.FieldsFunc()

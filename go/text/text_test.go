@@ -14,6 +14,7 @@ func fakeReader(text string, itemSize, blockSize int) *Reader {
 	}
 	rd.config.MaxItemSize = int64(itemSize)
 	rd.config.MaxBlockSize = int64(blockSize)
+	rd.threads = 1
 	return rd
 }
 
@@ -95,6 +96,7 @@ func TestReader(t *testing.T) {
 
 	f := openFromReader(bytes.NewReader(text), config)
 	f.SetNames(names)
+	f.SetThreads(2)
 
 	if f.Blocks() != 2 {
 		t.Errorf("Expected 2 blocks, go %d.", f.Blocks())
