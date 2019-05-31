@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import palette
 from palette import pc
 import minh
+import time
 
 palette.configure(False)
 
@@ -18,15 +19,25 @@ def main():
     f = minh.open(fname)
 
     for b in range(f.blocks):
-        x, y, z, mvir, pid = f.block(b, ["x", "y", "z", "mvir", "pid"])
+        plt.figure()
 
-        ok = (mvir > 1e13) & (pid == -1) & (z < 25)
-        c = pc()
-        plt.plot(x[ok], y[ok], ".", c=c)
+        t0 = time.time()
+        bnd, x, y, z, mvir = f.block(
+            b, ["boundary", "x", "y", "z", "mvir"]
+        )
+        t1 = time.time()
+        print("Read block %d: %.2f minutes" % (b, (t1 - t0)/60))
 
-    plt.xlim(0, 125)
-    plt.ylim(0, 125)
+        ok = (z < 25) & (mvir > 1e12)
 
-    plt.savefig("slice.pdf")
+        plt.plot(x[ok & (bnd == 0)], y[ok & (bnd == 0)], ".", c="r")
+        plt.plot(x[ok & (bnd == 1)], y[ok & (bnd == 1)], ".", c="k")
+
+        plt.xlim(0, 125)
+        plt.ylim(0, 125)
+        plt.xlabel(r"$X$")
+        plt.ylabel(r"$Y$")
+
+        plt.savefig("slice_b%d.png" % b)
 
 if __name__ == "__main__": main()
