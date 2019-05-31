@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/phil-mansfield/minnow/go/config"
 	"github.com/phil-mansfield/minnow/go/minh"
@@ -47,12 +48,28 @@ func main() {
 	hlistFiles, err := filepath.Glob(inPattern)
 	if err != nil { panic(err.Error()) }
 
-	for i := range hlistFiles {
-		hlist := hlistFiles[i]
-		hlistOut := path.Join(out, path.Base(hlist))
+	for _, hlist := range hlistFiles {
+		fmt.Printf("Converting %s\n", hlist)
 		info := &FileInfo{ Config: cfg, Index: idx, Vars: vars, Types: types }
-		ConvertFile(info, hlist, hlistOut)
+
+		t0 := time.Now()
+		ConvertFile(info, hlist, OutName(out, hlist))
+		t1 := time.Now()
+		dt := t1.Sub(t0)
+
+		fmt.Printf("    %.2f minutes\n", dt.Seconds() / 60)
 	}
+}
+
+func OutName(outDir, hlist string) string {
+	base := path.Base(hlist)
+	tok := strings.Split(base, ".")
+	if len(tok) == 0 {
+		tok = append(tok, "minh")
+	} else {
+		tok = append(tok[:len(tok) - 1], "minh")
+	}
+	return path.Join(outDir, strings.Join(tok, "."))
 }
 
 func ParseConfig(fname string) *TextConfig {
@@ -175,14 +192,12 @@ func ConvertFile(info *FileInfo, hlist, out string) {
 
 	fM := minh.Create(out)
 	fM.Header(names, header, cols)
+	fM.Geometry(float32(info.Config.L), 0, 0)
 	for b := 0; b < fR.Blocks(); b++ {
-		fmt.Println(b, names)
 		fR.Block(b, names, buf)
 		n := GenericCut(cutoff, buf[iMass], buf)
-		fmt.Println(n)
 		if n > 0 { fM.Block(buf) }
 	}
-	fmt.Println("Closing")
 	fM.Close()
 }
 
@@ -198,12 +213,16 @@ func ParseTypeString(
 	cols []minh.Column, t []string,
 ) ([]interface{}, []minh.Column) {
 	switch t[0] {
+	case "int64":
+		buf = append(buf, []int64{ })
+		cols = append(cols, minh.Column{Type: minh.Int64})
+	case "float32":
+		buf = append(buf, []float32{ })
+		cols = append(cols, minh.Column{Type: minh.Float32})
 	case "int":
-		fmt.Println("int")
 		buf = append(buf, []int64{ })
 		cols = append(cols, minh.Column{Type: minh.Int})
 	case "q_float":
-		fmt.Println("float")
 		col := minh.Column{Type: minh.Float}
 		switch t[1] {
 		case "position":
@@ -219,6 +238,8 @@ func ParseTypeString(
 			col.Log, col.Dx = 1, float32(eps)
 			col.Low = float32(math.Log10(min))
 			col.High = float32(math.Log10(max))
+		case "vec":
+			
 		default:
 			panic(fmt.Sprintf("q_float qualifier %s not recognized", t[1]))
 		}
@@ -228,7 +249,6 @@ func ParseTypeString(
 	default:
 		panic(fmt.Sprintf("Type %s not recognized.", t[0]))
 	}
-	fmt.Println(cols[len(cols) - 1])
 	return buf, cols
 }
 
