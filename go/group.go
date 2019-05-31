@@ -348,6 +348,7 @@ func newFloatGroupFromTail(f *os.File) group {
 ///////////////////////
 
 func int64Min(x []int64) int64 {
+	if len(x) == 0 { return 0 }
 	min := x[0]
 	for i := range x {
 		if x[i] < min { min = x[i] }
@@ -356,6 +357,7 @@ func int64Min(x []int64) int64 {
 }
 
 func uint64Min(x []uint64) uint64 {
+	if len(x) == 0 { return 0 }
 	min := x[0]
 	for i := range x {
 		if x[i] < min { min = x[i] }
@@ -380,6 +382,7 @@ func bound(x []int64, min, pixels int64) {
 }
 
 func periodicMin(x []int64, pixels int64) int64 {	
+	if len(x) == 0 { return 0 }
 	x0, width := x[0], int64(1)
 		
 	for _, xi := range x {

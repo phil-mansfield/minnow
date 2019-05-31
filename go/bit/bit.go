@@ -149,6 +149,7 @@ type ArrayBuffer struct {
 }
 
 func (ab *ArrayBuffer) Bits(x []uint64) int {
+	if len(x) == 0 { return 0 }
 	max := x[0]
 	for i := range x {
 		if x[i] > max { max = x[i] }
