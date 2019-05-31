@@ -232,7 +232,6 @@ func Open(fname string) *Reader {
 func (rd *Reader) Ints(names []string) map[string][]int64 {
 	out := map[string][]int64{ }
 	for _, name := range names { out[name] = make([]int64, rd.Length) }
-
 	end := 0
 
 	for b := 0; b < rd.Blocks; b++ {
@@ -267,6 +266,7 @@ func (rd *Reader) Floats(names []string) map[string][]float32 {
 
 func (rd *Reader) IntBlock(b int, out map[string][]int64) {
 	runtime.GC()
+
 	for name, arr := range out {
 		arr = expandInt64(arr, rd.BlockLengths[b])
 

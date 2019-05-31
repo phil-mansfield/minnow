@@ -333,14 +333,74 @@ func TestCellSizes(t *testing.T) {
 	}
 }
 
-func BoundaryTest(t *testing.T) {
+func TestBoundary(t *testing.T) {
+	fname := "../../test_files/boundary_minh.test"
+
 	vecs := [][3]float32{
+		{25, 25, 25},
+		{50, 50, 50},
+		{26, 26, 95},
 	}
+	blocks := []struct{
+		x []float32
+		boundaryFlag []int64
+		id []int64
+	} {
+		{[]float32{25, 50, 26}, []int64{0, 1, 1}, []int64{0, 1, 2}},
+		{[]float32{50}, []int64{1}, []int64{1}},
+		{[]float32{50}, []int64{1}, []int64{1}},
+		{[]float32{50}, []int64{1}, []int64{1}},
+		{[]float32{50, 26}, []int64{1, 0}, []int64{1, 2}},
+		{[]float32{50}, []int64{1}, []int64{1}},
+		{[]float32{50}, []int64{1}, []int64{1}},
+		{[]float32{50}, []int64{0}, []int64{1}},
+	}
+
 	coord := [3][]float32{
-		make([]flaot32, len(vecs)),
-		make([]flaot32, len(vecs)),
-		make([]flaot32, len(vecs)),
+		make([]float32, len(vecs)),
+		make([]float32, len(vecs)),
+		make([]float32, len(vecs)),
 	}
+	for i := range vecs {
+		for k := 0; k < 3; k++ { coord[k][i] = vecs[i][k] }
+	}
+
+	id := make([]int64, len(vecs))
+	for i := range id { id[i] = int64(i) }
+
+	f := CreateBoundary(fname)
+	f.Header("This is my header string.")
+	f.Geometry(100.0, 20.0, 2)
+	f.Coordinates(coord[0], coord[1], coord[2])
+	f.Column("id", Column{Type: Int64}, id)
+	f.Column("x", Column{Type: Float32}, coord[0])
+	f.Close()
+
+	rd := Open(fname)
+
+	iOut := map[string][]int64 { "boundary": nil, "id": nil }
+	fOut := map[string][]float32 { "x": nil }
+		_ = fOut
+
+	for b := 0; b < 8; b++ {
+		rd.IntBlock(b, iOut)
+		rd.FloatBlock(b, fOut)
+
+		if !int64sEq(iOut["boundary"], blocks[b].boundaryFlag) {
+			t.Errorf("Expected boundary[%d] = %d, but got %d.", b,
+				blocks[b].boundaryFlag, iOut["boundary"])
+		}
+		if !int64sEq(iOut["id"], blocks[b].id) {
+			t.Errorf("Expected id[%d] = %d, but got %d.", b,
+				blocks[b].id, iOut["id"])
+		}
+		if !float32sEq(fOut["x"], blocks[b].x, 0.1) {
+			t.Errorf("Expected x[%d] = %g, but got %g.", b,
+				blocks[b].x, fOut["x"])
+		}
+	}
+
+	rd.Close()
 }
 
 func stringsEq(x, y []string) bool {

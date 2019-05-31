@@ -231,12 +231,16 @@ func (minh *BoundaryWriter) boundaryColumn(boundaryFlag [][]int8) {
 	for i := 0; i < c*c*c; i++ {
 		N := len(boundaryFlag[i])
 		minh.i64Buf = expandInt64(minh.i64Buf, N)
-		for j := range boundaryFlag[i] {
+		for j := range boundaryFlag[i] { 
 			minh.i64Buf[j] = int64(boundaryFlag[i][j])
-			minh.f.FixedSizeGroup(minnow.IntGroup, N)
-			minh.f.Data(minh.i64Buf)
 		}
+		minh.f.IntGroup(N)
+		minh.f.Data(minh.i64Buf)
+
+		minh.blockSizes = append(minh.blockSizes, int64(N))
 	}
+
+	minh.blocks = len(boundaryFlag)
 }
 
 // Close finalizes and closes the BoundaryWriter.
