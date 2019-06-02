@@ -213,6 +213,8 @@ func (minh *BoundaryWriter) Column(name string, col Column, x interface{}) {
 			if col.Type == Float32 {
 				minh.f.FixedSizeGroup(minnow.Float32Group, N)
 			} else {
+				lim := [2]float32{ col.Low, col.High }
+				minh.f.FloatGroup(N, lim, col.Dx)
 				processFloatGroup(minh.f32Buf, col)
 			}
 			minh.f.Data(minh.f32Buf)
