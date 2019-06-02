@@ -171,6 +171,7 @@ class Reader(object):
         i = self.block_index[b]
         self.f.seek(self.group_offsets[i], 0)
         self.f.seek(self.readers[i].block_offset(b), 1)
+        random.seed(b)
         return self.readers[i].read_data(self.f, b)
         
     def data_type(self, b):
