@@ -164,18 +164,45 @@ class Reader(object):
         self.f.close()
 
     def block_origin(self, b):
+        """ block_origin returns the origin of a cell and its boundary. If this
+        origin would be negative, it wraps around.
+        """
         origin =  self.cell_origin(b) - self.boundary
         origin[origin < 0] += self.L
         return origin
 
     def block_width(self):
+        """ block_width returns the width of a cell plus its boundary
+        """
         return self.cell_width() + self.boundary*2
 
     def cell_origin(self, b):
+        """ cell_origin returns the origin of a cell without its boundary 
+        """
         ix = b % self.cells
         iy = (b // self.cells) % self.cells
         iz = b // (self.cells * self.cells)
         return np.array([ix, iy, iz]) * self.cell_width()
 
     def cell_width(self):
+        """ cell_width returns the width of a cell without its bounary
+        """
+        if not self.is_boundary(): return self.L
         return self.L / self.cells
+
+def normalize_coords(coord, L, origin, width):
+    """ normalize_coords normalizes a 3 x N array of coordinates in a box of
+    width L to their location relative to a given origin. If any coordinates
+    would be outside of the cube defined by width, they are clipped to be
+    inside the cell.
+    """
+    out = [None]*3
+    for k in range(3):
+        vec = coord[k] - origin[k]
+        vec[vec < -L/2] += L
+        vec[vec > L/2] -= L
+        vec[vec < 0] = 0
+        vec[vec > width] = width
+        out[k] = vec
+
+    return np.array(out)
