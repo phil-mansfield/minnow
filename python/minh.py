@@ -162,3 +162,20 @@ class Reader(object):
 
     def close(self):
         self.f.close()
+
+    def block_origin(self, b):
+        origin =  self.cell_origin(b) - self.boundary
+        origin[origin < 0] += self.L
+        return origin
+
+    def block_width(self):
+        return self.cell_width() + self.boundary*2
+
+    def cell_origin(self, b):
+        ix = b % self.cells
+        iy = (b // self.cells) % self.cells
+        iz = b // (self.cells * self.cells)
+        return np.array([ix, iy, iz]) * self.cell_width()
+
+    def cell_width(self):
+        return self.L / self.cells
