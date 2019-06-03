@@ -199,8 +199,9 @@ def normalize_coords(coord, L, origin, width):
     out = [None]*3
     for k in range(3):
         vec = coord[k] - origin[k]
-        vec[vec < -L/2] += L
-        vec[vec > L/2] -= L
+        vec[vec < -L/4] += L
+        vec[vec > (L/4 + width)] -= L
+
         vec[vec < 0] = 0
         vec[vec > width] = width
         out[k] = vec

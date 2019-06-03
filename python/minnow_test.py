@@ -336,6 +336,23 @@ def test_normalize():
     for k in range(3):
         assert(np.all(out == norm[k]))
 
+    L, width, origin = 100.0, 70.0, np.array([90, 90, 90])
+    x = np.array([90, 0, 20, 30, 50, 60])
+    y = np.array([90, 0, 20, 30, 50, 60])
+    z = np.array([90, 0, 20, 30, 50, 60])
+
+    coord = np.array([x, y, z])
+    norm = minh.normalize_coords(coord, L, origin, width)
+    assert(np.all(norm[0] == np.array([ 0, 10, 30, 40, 60, 70])))
+
+    L, width, origin = 100.0, 70.0, np.array([40, 40, 40])
+    x = np.array([40, 50, 60, 70, 80, 90, 0, 10])
+    y = np.array([40, 50, 60, 70, 80, 90, 0, 10])
+    z = np.array([40, 50, 60, 70, 80, 90, 0, 10])
+
+    coord = np.array([x, y, z])
+    norm = minh.normalize_coords(coord, L, origin, width)
+    assert(np.all(norm[0] == [ 0, 10, 20, 30, 40, 50, 60, 70]))
 
 
 if __name__ == "__main__":
