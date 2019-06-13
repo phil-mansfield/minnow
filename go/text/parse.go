@@ -163,7 +163,7 @@ func parseFloat32s(
 			// Parse strings.
 			
 			for j := range idxs {
-				x, err := strconv.ParseFloat(string(words[idxs[j]]), 32)
+				x, err := strconv.ParseFloat(string(words[idxs[j]]), 64)
 				if err != nil { panic(err.Error()) }
 				out[j][i] = float32(x)
 			}

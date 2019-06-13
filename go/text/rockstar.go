@@ -27,7 +27,12 @@ func rockstarNames(line string) []string {
 	for i := range names {
 		names[i] = strings.Trim(names[i], " \n\t")
 	}
-	return names
+	out := []string{ }
+	for i := range names {
+		if len(names[i]) != 0 { out = append(out, names[i]) }
+	}
+
+	return out
 }
 
 func consistentTreesNames(line string) []string {
@@ -35,6 +40,12 @@ func consistentTreesNames(line string) []string {
 	for i := range names {
 		toks := strings.Split(names[i], "(")
 		names[i] = strings.Join(toks[:len(toks)-1], "(")
+		names[i] = strings.Trim(names[i], " \n\t")
+	}
+
+	out := []string{ }
+	for i := range names {
+		if len(names[i]) != 0 { out = append(out, names[i]) }
 	}
 
 	return names
