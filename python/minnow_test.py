@@ -324,11 +324,11 @@ def test_origin():
     assert(np.all(rd.block_origin(0) == np.array([90, 90, 90])))
     
 def test_normalize():
-    L, width, origin = 100.0, 20.0, np.array([0, 50, 90])
-    x = np.array([-1, 99, 5, 15, 21])
-    y = np.array([49, 49, 55, 65, 71])
-    z = np.array([89, 89, 95, 5, 11])
-    coord = np.array([x, y, z])
+    L, width, origin = 100.0, 20.0, np.array([0, 50, 90], dtype=float)
+    x = np.array([-1, 99, 5, 15, 21], dtype=float)
+    y = np.array([49, 49, 55, 65, 71], dtype=float)
+    z = np.array([89, 89, 95, 5, 11], dtype=float)
+    coord = np.array([x, y, z], dtype=float)
     norm = minh.normalize_coords(coord, L, origin, width)
 
     out = np.array([0, 0, 5, 15, 20])
@@ -336,23 +336,23 @@ def test_normalize():
     for k in range(3):
         assert(np.all(out == norm[k]))
 
-    L, width, origin = 100.0, 70.0, np.array([90, 90, 90])
-    x = np.array([90, 0, 20, 30, 50, 60])
-    y = np.array([90, 0, 20, 30, 50, 60])
-    z = np.array([90, 0, 20, 30, 50, 60])
+    L, width, origin = 100.0, 70.0, np.array([90, 90, 90], dtype=float)
+    x = np.array([90, 0, 20, 30, 50, 60], dtype=float)
+    y = np.array([90, 0, 20, 30, 50, 60], dtype=float)
+    z = np.array([90, 0, 20, 30, 50, 60], dtype=float)
 
     coord = np.array([x, y, z])
     norm = minh.normalize_coords(coord, L, origin, width)
-    assert(np.all(norm[0] == np.array([ 0, 10, 30, 40, 60, 70])))
+    assert(np.all(norm[0] == np.array([ 0, 10, 30, 40, 60, 70], dtype=float)))
 
-    L, width, origin = 100.0, 70.0, np.array([40, 40, 40])
-    x = np.array([40, 50, 60, 70, 80, 90, 0, 10])
-    y = np.array([40, 50, 60, 70, 80, 90, 0, 10])
-    z = np.array([40, 50, 60, 70, 80, 90, 0, 10])
+    L, width, origin = 100.0, 70.0, np.array([40, 40, 40], dtype=float)
+    x = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
+    y = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
+    z = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
 
     coord = np.array([x, y, z])
     norm = minh.normalize_coords(coord, L, origin, width)
-    assert(np.all(norm[0] == [ 0, 10, 20, 30, 40, 50, 60, 70]))
+    assert(np.all(norm[0] == np.array([0, 10, 20, 30, 40, 50, 60, 70], dtype=float)))
 
 
 if __name__ == "__main__":
