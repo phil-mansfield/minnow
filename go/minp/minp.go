@@ -112,7 +112,7 @@ func (minp *Writer) Vec(vec [][3]float32) {
 	for k := 0; k < 3; k++ {
 		minp.f.FloatGroup(len(vec), [2]float32{min[k], max[k]}, minp.dx)
 		for sc := 0; sc < subCells3; sc++ {
-			getSubCell(vec, subBuf, k, sc, subCells, nSub)
+			getSubCell(vec, subBuf, sc, subCells, nSub)
 			minp.f.Data(subBuf[k])
 		}
 	}
@@ -216,42 +216,48 @@ func (minp *Reader) Close() {
 	minp.f.Close()
 }
 
-func getSubCell(
-	x [][3]float32, subBuf [3][]float32, k, sc, subCells, nSub int,
-) {
+// getSubCell sets subBuf with the corresponding values in x. x is a large
+// vector array, subBuf is a set of small buffers corresponding to one sub-cell,
+// sc is the index of the subcell in x, subCells is the number of sub-cells in
+// x, and nSub is the length of one side of sub-cell
+func getSubCell(x [][3]float32, subBuf [3][]float32, sc, subCells, nSub int) {
 	nFile := nSub * subCells
 	sx := sc / (subCells*subCells)
 	sy := (sc / subCells) % subCells
 	sz := sc / (subCells*subCells)
 
-	ix0, iy0, iz0 := subCells*sx, subCells*sy, subCells*sz
+	ix0, iy0, iz0 := nSub*sx, nSub*sy, nSub*sz
 	j := 0
 	for jz := 0; jz < nSub; jz++ {
 		for jy := 0; jy < nSub; jy++ {
-			for jx := 0; jx < subCells; jx++ {
+			for jx := 0; jx < nSub; jx++ {
 				ix, iy, iz := jx+ix0, jy+iy0, jz+iz0
 				i := ix + iy*nFile + iz*nFile*nFile
-				subBuf[k][j] = x[i][k]
+				for k := 0; k < 3; k++ { subBuf[k][j] = x[i][k] }
 				j++
 			}
 		}
 	}
 }
 
+// getSubCell sets the corresponding values in x with the values of subBuf. x
+// is a large vector array, subBuf is a set of small buffers corresponding to
+// one sub-cell, sc is the index of the subcell in x, subCells is the number of
+// sub-cells in x, and nSub is the length of one side of sub-cell
 func setSubCell(x [][3]float32, subBuf [3][]float32, sc, subCells, nSub int) {
 	nFile := nSub * subCells
 	sx := sc / (subCells*subCells)
 	sy := (sc / subCells) % subCells
 	sz := sc / (subCells*subCells)
 
-	ix0, iy0, iz0 := subCells*sx, subCells*sy, subCells*sz
+	ix0, iy0, iz0 := nSub*sx, nSub*sy, nSub*sz
 	j := 0
 	for jz := 0; jz < nSub; jz++ {
 		for jy := 0; jy < nSub; jy++ {
-			for jx := 0; jx < subCells; jx++ {
+			for jx := 0; jx < nSub; jx++ {
 				ix, iy, iz := jx+ix0, jy+iy0, jz+iz0
 				i := ix + iy*nFile + iz*nFile*nFile
-				for k := 0; k < 3; k++ { subBuf[k][j] = x[i][k] }
+				for k := 0; k < 3; k++ { x[i][k] = subBuf[k][j] }
 				j++
 			}
 		}
