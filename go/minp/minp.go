@@ -30,21 +30,21 @@ type Header struct {
 }
 
 type Cell struct {
-	FileIndex, FileCells, SubCells int
+	FileIndex, FileCells, SubCells int64
 }
 
 func (c *Cell) NFile(nSide int) int {
-	if nSide < 0 || c.FileCells < 0 || nSide % c.FileCells != 0 {
+	if nSide < 0 || c.FileCells < 0 || nSide % int(c.FileCells) != 0 {
 		panic(fmt.Sprintf("NSide = %d not a valid combination with " + 
 			"FileCells = %d", nSide, c.FileCells))
 	}
-	return nSide / c.FileCells
+	return nSide / int(c.FileCells)
 }
 
 func (c *Cell) FileCoord() (fx, fy, fz int) {
-	fx = c.FileIndex % c.FileCells
-	fy = (c.FileIndex / c.FileCells) % c.FileCells
-	fz = c.FileIndex / (c.FileCells*c.FileCells)
+	fx = int(c.FileIndex % c.FileCells)
+	fy = int((c.FileIndex / c.FileCells) % c.FileCells)
+	fz = int(c.FileIndex / (c.FileCells*c.FileCells))
 	return fx, fy, fz
 }
 
@@ -75,7 +75,7 @@ func (minp *Writer) Header(
 	minp.f.Header(rawHd)
 	minp.f.Header(c)
 	minp.f.Header(dx)
-	minp.f.Header(periodic)
+	minp.f.Header(boolToByte(periodic))
 
 	minp.hd = *hd
 	minp.c = c
@@ -83,7 +83,7 @@ func (minp *Writer) Header(
 	minp.dx = float32(dx)
 }
 
-func (minp *Writer) Vec(vec [][3]float32) {
+func (minp *Writer) Vectors(vec [][3]float32) {
 	var min, max [3]float32
 	if minp.periodic {
 		L := float32(minp.hd.L)
@@ -110,7 +110,7 @@ func (minp *Writer) Vec(vec [][3]float32) {
 	}
 
 	for k := 0; k < 3; k++ {
-		minp.f.FloatGroup(len(vec), [2]float32{min[k], max[k]}, minp.dx)
+		minp.f.FloatGroup(nSub3, [2]float32{min[k], max[k]}, minp.dx)
 		for sc := 0; sc < subCells3; sc++ {
 			getSubCell(vec, subBuf, sc, subCells, nSub)
 			minp.f.Data(subBuf[k])
@@ -126,6 +126,7 @@ func (minp *Writer) Close() {
 // Reader //
 ////////////
 
+// Reader contains methods for reading minp files.
 type Reader struct {
 	Header
 	RawHeader []byte
@@ -137,21 +138,41 @@ type Reader struct {
 	f *minnow.Reader
 }
 
+// Open opens a minp file with the given file name.
 func Open(fname string) *Reader {
 	minp := &Reader{ }
 	minp.f = minnow.Open(fname)
 
-	minp.f.Header(0, &minp.Header)
-	minp.f.Header(1, minp.RawHeader)
-	minp.f.Header(2, &minp.c)
-	minp.f.Header(3, &minp.Dx)
-	minp.f.Header(4, &minp.Periodic)
-	minp.FileIndex, minp.FileCells = minp.c.FileIndex, minp.c.FileCells
+	idHeader := idHeader{ }
+	minp.f.Header(0, &idHeader)
+	if idHeader.Magic != Magic {
+		panic(fmt.Sprintf("Not a minp file. Magic number is %d, not %d",
+			idHeader.Magic, Magic))
+	} else if idHeader.Version != Version {
+		panic(fmt.Sprintf("File version = %d, but code version = %d.",
+			idHeader.Version, Version))
+	} else if idHeader.FileType != basicFileType {
+		panic(fmt.Sprintf("File type = %d", idHeader.FileType))
+	}
+
+	minp.f.Header(1, &minp.Header)
+	minp.RawHeader = make([]byte, minp.f.HeaderSize(2))
+	minp.f.Header(2, minp.RawHeader)
+	minp.f.Header(3, &minp.c)
+	minp.f.Header(4, &minp.Dx)
+	bytePeriodic := byte(0)
+	minp.f.Header(5, &bytePeriodic)
+	minp.Periodic = byteToBool(bytePeriodic)
+
+	minp.FileIndex = int(minp.c.FileIndex)
+	minp.FileCells = int(minp.c.FileCells)
 
 	return minp
 }
 
-func (minp *Reader) Vec(out [][3]float32) {
+// Vec reads the vectors form the file into out. out should have length equal to
+// minp.N().
+func (minp *Reader) Vectors(out [][3]float32) {
 	nFile := minp.c.NFile(int(minp.NSide))
 	subCells := int(minp.c.SubCells)
 	nSub := nFile / subCells
@@ -208,10 +229,12 @@ func (minp *Reader) ID(out []uint64) {
 	}
 }
 
+// N returns the number of particles in the file.
 func (minp *Reader) N() int {
 	return minp.f.Blocks() / 3
 }
 
+// Close closes the Reader.
 func (minp *Reader) Close() {
 	minp.f.Close()
 }
@@ -222,7 +245,7 @@ func (minp *Reader) Close() {
 // x, and nSub is the length of one side of sub-cell
 func getSubCell(x [][3]float32, subBuf [3][]float32, sc, subCells, nSub int) {
 	nFile := nSub * subCells
-	sx := sc / (subCells*subCells)
+	sx := sc % subCells
 	sy := (sc / subCells) % subCells
 	sz := sc / (subCells*subCells)
 
@@ -246,7 +269,7 @@ func getSubCell(x [][3]float32, subBuf [3][]float32, sc, subCells, nSub int) {
 // sub-cells in x, and nSub is the length of one side of sub-cell
 func setSubCell(x [][3]float32, subBuf [3][]float32, sc, subCells, nSub int) {
 	nFile := nSub * subCells
-	sx := sc / (subCells*subCells)
+	sx := sc % subCells
 	sy := (sc / subCells) % subCells
 	sz := sc / (subCells*subCells)
 
@@ -274,4 +297,13 @@ func bounds(vec [][3]float32) (min, max [3]float32) {
 		}
 	}
 	return min, max
+}
+
+func boolToByte(b bool) byte {
+	if b { return 1 }
+	return 0
+}
+
+func byteToBool(b byte) bool {
+	return b != 0
 }
