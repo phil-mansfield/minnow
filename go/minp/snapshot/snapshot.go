@@ -6,15 +6,16 @@ import (
 	"reflect"
 
 	"github.com/phil-mansfield/nbody-utils/cosmo"
+	"github.com/phil-mansfield/minnow/go/minp"
 
 	"unsafe"
 )
 
 type Snapshot interface {
 	Files() int // Number of files in the snapshot
-	Header() *Header // Header contains basic information about the snapshot
+	Header() *minp.Header // Header returns basic information about the snapshot
 	RawHeader(i int) []byte // Return the bytes of the original header block.
-	UpdateHeader(hd *Header) // Change the header to a new one.
+	UpdateHeader(hd *minp.Header) // Change the header to a new one.
 	UniformMass() bool // True if all particles are the same mass.
 
 	// All these methods return internal buffers, so don't append to them or
@@ -25,19 +26,8 @@ type Snapshot interface {
 	ReadMp(i int) ([]float32, error) // Read particle masses for file i.
 }
 
-// Header is a struct containing basic information about the snapshot. Not all
-// simulation headers provide all information: the user is responsible for
-// supplying that information afterwards in these cases.
-type Header struct {
-	Z, Scale float64 // Redshift, scale factor
-	OmegaM, OmegaL, H100 float64 // Omega_m(z=0), Omega_L(z=0), little-h(z=0)
-	L, Epsilon float64 // Box size, force softening
-	NSide, NTotal int64 // Particles on one size, total particles
-	UniformMp float64 // If all particle masses are the same, this is m_p.
-}
 
-
-func (hd *Header) calcUniformMass() {
+func calcUniformMass(hd *minp.Header) {
 	rhoM0 := cosmo.RhoAverage(hd.H100*100, hd.OmegaM, hd.OmegaL, 0)
 	mTot := (hd.L * hd.L * hd.L) * rhoM0
 	hd.UniformMp =  mTot / float64(hd.NTotal)

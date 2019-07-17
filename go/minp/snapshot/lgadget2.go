@@ -11,11 +11,13 @@ import (
 	"path"
 	"runtime"
 
+	"github.com/phil-mansfield/minnow/go/minp"
+
 	"unsafe"
 )
 
 type lGadget2Snapshot struct {
-	hd Header
+	hd minp.Header
 	context LGadget2Context
 	filenames []string
 
@@ -87,10 +89,10 @@ func readLGadget2Header(
 	return out, err
 }
 
-func (gh *lGadget2Header) convert(nPartNum int) *Header {
+func (gh *lGadget2Header) convert(nPartNum int) *minp.Header {
 	// Assumes the catalog has already been checked for corruption.
 	
-	hd := &Header{ }
+	hd := &minp.Header{ }
 	
 	hd.Z = gh.Redshift
 	hd.Scale = 1/(1 + hd.Z)
@@ -102,7 +104,7 @@ func (gh *lGadget2Header) convert(nPartNum int) *Header {
 	hd.NTotal = lgadgetParticleNum(gh.NPartTotal, gh, nPartNum)
 	hd.NSide = intCubeRoot(hd.NTotal)
 
-	hd.calcUniformMass()
+	calcUniformMass(hd)
 
 	return hd
 }
@@ -155,7 +157,7 @@ func (snap *lGadget2Snapshot) Files() int {
 	return len(snap.filenames)
 }
 
-func (snap *lGadget2Snapshot) Header() *Header {
+func (snap *lGadget2Snapshot) Header() *minp.Header {
 	return &snap.hd
 }
 
@@ -174,7 +176,7 @@ func (snap *lGadget2Snapshot) RawHeader(idx int) []byte {
 	return buf
 }
 
-func (snap *lGadget2Snapshot) UpdateHeader(hd *Header) {
+func (snap *lGadget2Snapshot) UpdateHeader(hd *minp.Header) {
 	snap.hd = *hd
 }
 

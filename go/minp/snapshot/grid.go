@@ -3,12 +3,14 @@ package snapshot
 import (
 	"fmt"
 	"runtime"
+
+	"github.com/phil-mansfield/minnow/go/minp"
 )
 
 // Grid is a wrapper around a Snapshot which transforms it into a 
 // Lagrangian-contiguous grid.
 type Grid struct {
-	hd *Header
+	hd *minp.Header
 	snap Snapshot
 	cells int
 	xGrid, vGrid *vectorGrid
@@ -32,9 +34,9 @@ func NewGrid(snap Snapshot, cells int) Snapshot {
 }
 
 func (g *Grid) Files() int { return g.cells*g.cells*g.cells }
-func (g *Grid) Header() *Header { return g.snap.Header() }
+func (g *Grid) Header() *minp.Header { return g.snap.Header() }
 func (g *Grid) RawHeader(i int) []byte { return g.snap.RawHeader(i) }
-func (g *Grid) UpdateHeader(hd *Header) { g.snap.UpdateHeader(hd) }
+func (g *Grid) UpdateHeader(hd *minp.Header) { g.snap.UpdateHeader(hd) }
 func (g *Grid) UniformMass() bool { return g.snap.UniformMass() }
 
 func (g *Grid) ReadX(i int) ([][3]float32, error) {

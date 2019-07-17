@@ -1,13 +1,19 @@
 package snapshot
 
+import (
+	"github.com/phil-mansfield/minnow/go/minp"
+)
+
 type mockSnapshot struct {
-	hd *Header
+	hd *minp.Header
 	x, v [][][3]float32
 	mp [][]float32
 	id [][]int64
 }
 
-func NewMockSnapshot(hd *Header, x, v [][][3]float32, id [][]int64) Snapshot {
+func NewMockSnapshot(
+	hd *minp.Header, x, v [][][3]float32, id [][]int64,
+) Snapshot {
 	mp := make([][]float32, len(x))
 	for i := range mp {
 		mp[i] = make([]float32, len(x[0]))
@@ -24,13 +30,13 @@ func NewMockSnapshot(hd *Header, x, v [][][3]float32, id [][]int64) Snapshot {
 func (snap *mockSnapshot) Files() int {
 	return len(snap.x)
 }
-func (snap *mockSnapshot) Header() *Header {
+func (snap *mockSnapshot) Header() *minp.Header {
 	return snap.hd
 }
 func (snap *mockSnapshot) RawHeader(i int) []byte {
 	return []byte{99}
 }
-func (snap *mockSnapshot) UpdateHeader(hd *Header) {
+func (snap *mockSnapshot) UpdateHeader(hd *minp.Header) {
 	snap.hd = hd
 }
 func (snap *mockSnapshot) UniformMass() bool {
