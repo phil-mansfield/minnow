@@ -207,19 +207,19 @@ func (minp *Reader) Vectors(out [][3]float32) {
 }
 
 // ID returns the Lagrangian IDs of the particles in the file.
-func (minp *Reader) ID(out []uint64) {
-	nFile := uint64(minp.c.NFile(int(minp.NSide)))
-	nSide := uint64(minp.NSide)
+func (minp *Reader) IDs(out []int64) {
+	nFile := int64(minp.c.NFile(int(minp.NSide)))
+	nSide := int64(minp.NSide)
 	ifx, ify, ifz := minp.c.FileCoord()
-	fx, fy, fz := uint64(ifx), uint64(ify), uint64(ifz)
+	fx, fy, fz := int64(ifx), int64(ify), int64(ifz)
 	
 	// i is the index within the whole simulation, j is the index within the
 	// file's array.
-	ix0, iy0, iz0 := uint64(fx*nFile), uint64(fy*nFile), uint64(fz*nFile)
+	ix0, iy0, iz0 := int64(fx*nFile), int64(fy*nFile), int64(fz*nFile)
 	j := 0
-	for jz := uint64(0); jz < nFile; jz++ {
-		for jy := uint64(0); jy < nFile; jy++ {
-			for jx := uint64(0); jx < nFile; jx++ {
+	for jz := int64(0); jz < nFile; jz++ {
+		for jy := int64(0); jy < nFile; jy++ {
+			for jx := int64(0); jx < nFile; jx++ {
 				ix, iy, iz := jx+ix0, jy+iy0, jz+iz0
 				i := ix + iy*nSide + iz*nSide*nSide
 				out[j] = i

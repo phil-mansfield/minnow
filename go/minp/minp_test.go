@@ -72,6 +72,41 @@ func TestVecReaderWriter(t *testing.T) {
 	}
 }
 
+func TestIDs(t *testing.T) {
+	nSide, fileCells, subCells := 10, 5, 2
+	nFile := nSide / fileCells
+	indices := []int{ 0, 3 + 5*2 + 25*1}
+	ids := [][]int64{
+		{   0,   1,  10,  11, 100, 101, 110, 111 },
+		{ 246, 247, 256, 257, 346, 347, 356, 357 },
+	}
+
+	for i := range indices {
+		wr := Create("test_files/test.minp")
+		hd := &Header{ NSide: 10, L: 100 }
+		c := Cell{ int64(indices[i]), int64(fileCells), int64(subCells) }
+		wr.Header(hd, []byte{}, c, 1.0, true)
+		wr.Vectors(make([][3]float32, nFile*nFile*nFile))
+		wr.Close()
+
+		rd := Open("test_files/test.minp")
+		out := make([]int64, nFile*nFile*nFile)
+		rd.IDs(out)
+
+		if !int64sEq(out, ids[i]) {
+			t.Errorf("%d) Expected IDs = %d, got %d", i, ids[i], out)
+		}
+	}
+}
+
+func int64sEq(x, y []int64) bool {
+	if len(x) != len(y) { return false }
+	for i := range x {
+		if x[i] != y[i] { return false }
+	}
+	return true
+}
+
 func bytesEq(b1, b2 []byte) bool {
 	if len(b1) != len(b2) { return false }
 	for i := range b1 {
