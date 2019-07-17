@@ -19,6 +19,16 @@ def main():
     f = minh.open(fname)
 
     for b in range(f.blocks):
+        x, vx, mvir, vmax = f.block(
+            b, ["x", "vx", "mvir", "vmax"]
+        )
+
+        print("X", x[:3])
+        print("Y", vx[:3])
+        print("mvir", mvir[:3])
+        print("vmax", vmax[:3])
+        break
+        """
         plt.figure()
 
         t0 = time.time()
@@ -39,5 +49,6 @@ def main():
         plt.ylabel(r"$Y$")
 
         plt.savefig("slice_b%d.png" % b)
+        """
 
 if __name__ == "__main__": main()

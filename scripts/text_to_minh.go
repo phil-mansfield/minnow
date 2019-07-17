@@ -10,11 +10,16 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"runtime"
 
 	"github.com/phil-mansfield/minnow/go/config"
 	"github.com/phil-mansfield/minnow/go/minh"
 	"github.com/phil-mansfield/minnow/go/text"
 	index "github.com/phil-mansfield/minnow/scripts/name_index"
+)
+
+const (
+	Threads = 16
 )
 
 type TextConfig struct {
@@ -111,10 +116,11 @@ func ParseTypes(fname string, idx *index.Index) map[string][]string {
 	out := map[string][]string{ }
 	for _, line := range tok {
 		words := clean(strings.Split(line, " "))
+
 		v, typeInfo := words[0], words[1:]
 		std, ok := idx.Standardize(v)
 		if !ok {
-			panic(fmt.Sprintf("Variable %s isn't contained in name index.", v))
+			panic(fmt.Sprintf("Variable '%s' isn't contained in name index.", v))
 		}
 
 		out[std] = typeInfo
@@ -124,15 +130,18 @@ func ParseTypes(fname string, idx *index.Index) map[string][]string {
 }
 
 func ParseVars(fname string, idx *index.Index) map[string]bool {
-	bText, err := ioutil.ReadFile(fname)
-	if err != nil { panic(err.Error()) }
-	tok := clean(strings.Split(string(bText), " "))
-
+	tok := idx.AllNames()
+	if fname != "all" {
+		bText, err := ioutil.ReadFile(fname)
+		if err != nil { panic(err.Error()) }
+		tok = clean(strings.Split(string(bText), " "))
+	}
+		
 	out := map[string]bool{ }
 	for _, v := range tok {
 		std, ok := idx.Standardize(v)
 		if !ok {
-			panic(fmt.Sprintf("Variable %s isn't contained in name index.", v))
+			panic(fmt.Sprintf("Variable '%s' isn't contained in name index.",v))
 		}
 		out[std] = true
 	}
@@ -155,6 +164,8 @@ func clean(tok []string) []string {
 }
 
 func ConvertFile(info *FileInfo, hlist, out string) {
+	runtime.GC()
+
 	fR := text.OpenRockstar(hlist)
 	allNames, header := fR.Names(), fR.Header()
 
@@ -167,7 +178,7 @@ func ConvertFile(info *FileInfo, hlist, out string) {
 		std, ok := info.Index.Standardize(allNames[i])
 		allNames[i] = std
 		if !ok {
-			panic(fmt.Sprintf("Column name %s from %s not in name index",
+			panic(fmt.Sprintf("Column name '%s' from %s not in name index",
 				allNames[i], hlist))
 		}
 		if _, ok := info.Vars[std]; !ok { continue }
@@ -182,12 +193,13 @@ func ConvertFile(info *FileInfo, hlist, out string) {
 	cutoff := float32(info.Config.Mp * float64(info.Config.MinParticles))
 	iMass := find(names, info.Config.MassName)
 	if iMass == -1 {
-		panic(fmt.Sprintf("MassName %s not in name index.",
+		panic(fmt.Sprintf("MassName '%s' not in name index.",
 			info.Config.MassName))
 	}
 
 	// Actual I/O
 
+	fR.SetThreads(Threads)
 	fR.SetNames(allNames)
 
 	fM := minh.Create(out)
@@ -227,7 +239,7 @@ func ParseTypeString(
 		switch t[1] {
 		case "position":
 			col.Low, col.High, col.Dx = 0, float32(cfg.L), float32(cfg.Epsilon)
-		case "log":
+		case "log", "linear":
 			min, err := strconv.ParseFloat(t[2], 64)
 			if err != nil { panic(err.Error())  }
 			max, err := strconv.ParseFloat(t[3], 64)
@@ -235,11 +247,15 @@ func ParseTypeString(
 			eps, err := strconv.ParseFloat(t[4], 64)
 			if err != nil { panic(err.Error())  }
 
-			col.Log, col.Dx = 1, float32(eps)
-			col.Low = float32(math.Log10(min))
-			col.High = float32(math.Log10(max))
-		case "vec":
-			
+			if t[0] == "log" {
+				col.Log = 1
+				col.Low = float32(math.Log10(min))
+				col.High = float32(math.Log10(max))			
+			} else {
+				col.Low = float32(min)
+				col.High = float32(max)
+			}
+			col.Dx = float32(eps)
 		default:
 			panic(fmt.Sprintf("q_float qualifier %s not recognized", t[1]))
 		}
