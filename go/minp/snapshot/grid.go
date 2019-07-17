@@ -17,7 +17,7 @@ type Grid struct {
 	mpBuffer []float32
 }
 
-func NewGrid(snap Snapshot, cells int) *Grid {
+func NewGrid(snap Snapshot, cells int) Snapshot {
 	g := &Grid{ snap: snap, cells: cells, hd: snap.Header() }
 
 	if !snap.UniformMass() {
