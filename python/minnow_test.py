@@ -209,6 +209,7 @@ def test_q_float_record():
     for i in range(len(x2)):
         assert(len(x2[i]) == len(rd_x2[i]))
         assert(np.all(eps_eq(x2[i], rd_x2[i], dx2)))
+    
 
 def eps_eq(x, y, eps): return (x + eps > y) & (x - eps < y)
 
@@ -310,6 +311,50 @@ def column_eq(c1, c2):
             eps_eq(c1.low, c2.low, 1e-5) and
             eps_eq(c1.high, c2.high, 1e-5))
 
+def test_origin():
+    fname = "../test_files/reader_writer_minh.test"
+    rd = minh.open(fname)
+    rd.boundary, rd.cells, rd.L = 10.0, 5, 100.0
+
+    assert(rd.cell_width() == 20.0)
+    assert(rd.block_width() == 40.0)
+    assert(np.all(rd.cell_origin(25 + 5 + 1) == np.array([20, 20, 20])))
+    assert(np.all(rd.block_origin(25 + 5 + 1) == np.array([10, 10, 10])))
+    assert(np.all(rd.cell_origin(0) == np.array([0, 0, 0])))
+    assert(np.all(rd.block_origin(0) == np.array([90, 90, 90])))
+    
+def test_normalize():
+    L, width, origin = 100.0, 20.0, np.array([0, 50, 90], dtype=float)
+    x = np.array([-1, 99, 5, 15, 21], dtype=float)
+    y = np.array([49, 49, 55, 65, 71], dtype=float)
+    z = np.array([89, 89, 95, 5, 11], dtype=float)
+    coord = np.array([x, y, z], dtype=float)
+    norm = minh.normalize_coords(coord, L, origin, width)
+
+    out = np.array([0, 0, 5, 15, 20])
+
+    for k in range(3):
+        assert(np.all(out == norm[k]))
+
+    L, width, origin = 100.0, 70.0, np.array([90, 90, 90], dtype=float)
+    x = np.array([90, 0, 20, 30, 50, 60], dtype=float)
+    y = np.array([90, 0, 20, 30, 50, 60], dtype=float)
+    z = np.array([90, 0, 20, 30, 50, 60], dtype=float)
+
+    coord = np.array([x, y, z])
+    norm = minh.normalize_coords(coord, L, origin, width)
+    assert(np.all(norm[0] == np.array([ 0, 10, 30, 40, 60, 70], dtype=float)))
+
+    L, width, origin = 100.0, 70.0, np.array([40, 40, 40], dtype=float)
+    x = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
+    y = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
+    z = np.array([40, 50, 60, 70, 80, 90, 0, 10], dtype=float)
+
+    coord = np.array([x, y, z])
+    norm = minh.normalize_coords(coord, L, origin, width)
+    assert(np.all(norm[0] == np.array([0, 10, 20, 30, 40, 50, 60, 70], dtype=float)))
+
+
 if __name__ == "__main__":
     test_int_record()
     test_group_record()
@@ -318,5 +363,7 @@ if __name__ == "__main__":
     test_bit_int_record()
     test_q_float_record()
     test_minh_reader_writer()
+    test_origin()
+    test_normalize()
 
     #bench_bit_array()

@@ -27,6 +27,7 @@ type Reader struct {
 // Open opens a minnow file.
 func Open(fname string) *Reader {
 	f, err := os.Open(fname)
+	if err != nil { panic(err.Error()) }
 
 	// Read header
 
