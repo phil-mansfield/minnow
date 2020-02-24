@@ -1,4 +1,4 @@
-# Minnow Tutorial
+# Minnow Tutorial: Readin Files
 
 This is a tutorial for using the pre-alpha version of the minnow compression library. Later versions will make this easier.
 
