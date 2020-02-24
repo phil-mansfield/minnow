@@ -63,45 +63,45 @@ for b in f.blocks:
         geo_mean = 10**(log_sum / f.length)
         
         f.close()
-        ```
+```
+       
+The lengths of each block can be found in the array `f.block_lengths` .
         
-        The lengths of each block can be found in the array `f.block_lengths` .
-        
-        Sometimes it is important for haloes to be in the same block as all their neighboring haloes. In some minnow files, called "boundary files,"  blocks correspond to cubic cells. These blocks will contain all the haloes within those cubes as well as all the haloes in a thin, shared "boundary" layer around that cube. By convention, these minnow files will be named `xxxxx.bnd.minh` instead of `xxxxx.minh`. However, this can also be checked by calling `f.is_boundary()` after a minh file, `f`, has been read.
+Sometimes it is important for haloes to be in the same block as all their neighboring haloes. In some minnow files, called "boundary files,"  blocks correspond to cubic cells. These blocks will contain all the haloes within those cubes as well as all the haloes in a thin, shared "boundary" layer around that cube. By convention, these minnow files will be named `xxxxx.bnd.minh` instead of `xxxxx.minh`. However, this can also be checked by calling `f.is_boundary()` after a minh file, `f`, has been read.
         
         For boundary files, the `minh` library refers to the data contained in the central cubic region as a "cell" and the data corresponding to the cell and its surrounding layer as a "block."
         
         Several methods of `minh` file objects are only used for boundary files and boundary files have several additional fields:
-        ```python
-        import minh
+```python
+import minh
         
-        f = minh.read("Bolshoi.bnd.minh")
+f = minh.read("Bolshoi.bnd.minh")
         
-        # Prints True if the file is a boundary file
-        print(f.is_boundary())
+# Prints True if the file is a boundary file
+print(f.is_boundary())
         
-        # Prints the width of each cide of a cubic cell or block.
-        print(f.cell_width())
-        print(f.block_width())
+# Prints the width of each cide of a cubic cell or block.
+print(f.cell_width())
+print(f.block_width())
         
-        # Prints the origin of block 7 in Mpc/h.
-        print(g.cell_origin(7))
+# Prints the origin of block 7 in Mpc/h.
+print(g.cell_origin(7))
         
-        # Prints the number of cubic cells on each side of the simulation.
-        print(f.cells)
+# Prints the number of cubic cells on each side of the simulation.
+print(f.cells)
         
-        # Prints the width of the boundary layer around each cubic cells
-        # in Mpc/h.
-        print(f.boundary)
-        ```
+# Prints the width of the boundary layer around each cubic cells
+# in Mpc/h.
+ print(f.boundary)
+```
         
         Additionally, boundary files have an additional variable, `"bnd"`, which is True if a halo is a block's boundary layer and False if the halo is a block's cell. This can be read like any other variable:
         
-        ```python
-        import minh 
+```python
+import minh 
         
-        f = minh.read("Bolshoi.bnd.minh")
-        x, y, z, mvir, bnd = minh.read(["x", "y", "z", "mvir", "bnd"])
+f = minh.read("Bolshoi.bnd.minh")
+x, y, z, mvir, bnd = minh.read(["x", "y", "z", "mvir", "bnd"])
         
-        f.close()
-        ```
+f.close()
+```
