@@ -59,19 +59,20 @@ geo_mean = 10**(np.sum(np.log10(mvir)) / len(mvir))
 log_sum = 0.0
 for b in f.blocks:
     mvir = f.block(b, ["mvir"])
-        log_sum += np.sum(np.log10(mvir))
-        geo_mean = 10**(log_sum / f.length)
+    log_sum += np.sum(np.log10(mvir))
+
+geo_mean = 10**(log_sum / f.length)
         
-        f.close()
+f.close()
 ```
        
 The lengths of each block can be found in the array `f.block_lengths` .
         
 Sometimes it is important for haloes to be in the same block as all their neighboring haloes. In some minnow files, called "boundary files,"  blocks correspond to cubic cells. These blocks will contain all the haloes within those cubes as well as all the haloes in a thin, shared "boundary" layer around that cube. By convention, these minnow files will be named `xxxxx.bnd.minh` instead of `xxxxx.minh`. However, this can also be checked by calling `f.is_boundary()` after a minh file, `f`, has been read.
         
-        For boundary files, the `minh` library refers to the data contained in the central cubic region as a "cell" and the data corresponding to the cell and its surrounding layer as a "block."
+For boundary files, the `minh` library refers to the data contained in the central cubic region as a "cell" and the data corresponding to the cell and its surrounding layer as a "block."
         
-        Several methods of `minh` file objects are only used for boundary files and boundary files have several additional fields:
+Several methods of `minh` file objects are only used for boundary files and boundary files have several additional fields:
 ```python
 import minh
         
@@ -95,7 +96,7 @@ print(f.cells)
  print(f.boundary)
 ```
         
-        Additionally, boundary files have an additional variable, `"bnd"`, which is True if a halo is a block's boundary layer and False if the halo is a block's cell. This can be read like any other variable:
+Additionally, boundary files have an additional variable, `"bnd"`, which is True if a halo is a block's boundary layer and False if the halo is a block's cell. This can be read like any other variable:
         
 ```python
 import minh 
