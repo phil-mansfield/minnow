@@ -53,5 +53,5 @@ L is the width in Mpc/h, Epsilon is the force softening scale in kpc/h, Mp is th
 Supposing that you have a config file called `BolshoiP.config`, you can convert files using the `text_to_minh` binary which you created earlier. This can be done with:
 `$ ./text_to_minh BolshioP.config all hlist_1.00000.list output_directory_name`  
 or  
-`$ ./text_to_minh BolshioP.config all *.list output_directory_name`  
+`$ ./text_to_minh BolshioP.config all "*.list" output_directory_name`  
 if you have a lot of BolshoiP halo files.
