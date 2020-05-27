@@ -69,7 +69,7 @@ func TestReaderWriter(t *testing.T) {
 		!columnsEq(rd.Columns, columns) || rd.Blocks != 2 ||
 		rd.Length != 8 || !intsEq(rd.BlockLengths, []int{5, 3}) ||
 		rd.L != 100.0 || rd.Boundary != 10.0 || rd.Cells != 4 {
-		t.Fatalf("Could not read header: %v %v %v %v %v %v",
+		t.Fatalf("Could not read header: %v %v %v %v %v %v %v %v %v",
 			stringsEq(rd.Names, names),
 			rd.Text == text, columnsEq(rd.Columns, columns), rd.Blocks == 2,
 			rd.Length == 8, intsEq(rd.BlockLengths, []int{5, 3}),
