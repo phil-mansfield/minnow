@@ -9,7 +9,7 @@ Please inform me if you find errors in this tutorial at mansfield@uchicago.edu.
 Most users will never need to generate minnow files. If you fall into this group and only want to read files in Python, installation is relatively simple.
 
 1. Make sure that you have the `numpy` library installed.
-2. Clone the git repo into a location of your choice using the command `https://github.com/phil-mansfield/minnow.git`.
+2. Clone the git repo into a location of your choice using the command `git clone https://github.com/phil-mansfield/minnow.git`.
 3. Once this directory is located at `xxxx/yyyy/zzzz/minnow`, let Python know where the corresponding Python library is by adding the directory `xxxx/yyyy/zzzz/minnow/python` to the `PYTHONPATH` environment variable. If you've never done something like this before, look at the instructions [here](https://stackoverflow.com/questions/3402168/permanently-add-a-directory-to-pythonpath) for unix/Mac and [here](http://net-informations.com/python/intro/path.htm) for Windows.
 4. Restart your terminal, if you are using one.
 
