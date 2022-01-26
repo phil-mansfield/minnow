@@ -148,7 +148,8 @@ class Reader(object):
     def header(self, i, data_type):
         self.f.seek(self.header_offsets[i], 0)
         b = self.f.read(self.header_sizes[i])
-        if type(data_type) == type or type(data_type) == np.dtype:
+        if (type(data_type) == type or type(data_type) == np.dtype or
+            isinstance(data_type, np.dtype)):
             dtype = np.dtype(data_type).newbyteorder("<")
             data = np.frombuffer(b, dtype=dtype)
             if len(data) == 1:
